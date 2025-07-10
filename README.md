@@ -96,9 +96,8 @@ This project is intended strictly for educational and authorized security resear
 
 ---
 
-**Developer:** zerosocialcode  
-[GitHub](https://github.com/zerosocialcode)  
+**Developer:**[zerosocialcode](https://github.com/zerosocialcode)
+
+## Connect
 [Facebook](https://facebook.com/zerosocialcode)  
 Email: zerosocialcode@gmail.com
-
-```

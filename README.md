@@ -4,6 +4,12 @@
 
 ---
 
+## Preview
+
+![Scarface Preview](https://raw.githubusercontent.com/zerosocialcode/Scarface/refs/heads/main/.prvw.png)
+
+---
+
 ## Overview
 
 **Scarface** is a modular penetration testing and social engineering framework. It enables security professionals and researchers to clone websites, harvest credentials, and expose phishing pages securely to the internet. The framework is designed for flexibility, automation, and ease of use, allowing you to manage campaigns, payloads, and supporting tools from a single, universal platform.
@@ -94,3 +100,5 @@ This project is intended strictly for educational and authorized security resear
 [GitHub](https://github.com/zerosocialcode)  
 [Facebook](https://facebook.com/zerosocialcode)  
 Email: zerosocialcode@gmail.com
+
+```

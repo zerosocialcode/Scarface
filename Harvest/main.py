@@ -131,7 +131,7 @@ def run_expose_and_get_url(option):
     }
     url_patterns = {
         1: r"https://[a-zA-Z0-9\-]+\.trycloudflare\.com",
-        2: r"https://[a-zA-Z0-9\-]+\.ngrok\.io",
+        2: r"https://[a-zA-Z0-9\-]+\.ngrok-free\.app",
         3: r"https://[a-zA-Z0-9\-]+\.loca\.lt"
     }
     if option in expose_scripts:

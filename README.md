@@ -6,7 +6,7 @@
 
 ## Preview
 
-![Scarface Preview](https://raw.githubusercontent.com/zerosocialcode/Scarface/refs/heads/main/.prvw.png)
+![Scarface Preview](https://raw.githubusercontent.com/zerosocialcode/Scarface/refs/heads/main/images/.temp.png)
 
 ---
 
@@ -29,27 +29,8 @@
 ---
 
 ## Directory Structure
+![Structure](https://raw.githubusercontent.com/zerosocialcode/Scarface/refs/heads/main/images/.structure.png)
 
-```
-Scarface/
-├── main.py                 # Universal launcher
-├── Harvest/                # Main harvesting server & logic
-│   ├── main.py
-│   └── sites/
-├── Scarface-Cloner/        # Website cloner engine
-│   └── main.py
-├── expose/                 # Public exposure/tunneling scripts
-│   ├── cloudflared.py
-│   ├── localtunnel.py
-│   └── ngrok.py
-├── credentials/            # Harvested credentials (per site)
-│   └── Facebook/
-│       └── result.json
-├── sites/                  # Cloned phishing sites
-│   └── Facebook/
-│       └── index.html
-└── .banner.txt             # (Optional) Banner for branding
-```
 
 ---
 

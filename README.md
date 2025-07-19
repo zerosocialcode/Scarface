@@ -61,8 +61,7 @@ Scarface is a sophisticated phishing framework designed for penetration testing 
 2. Need to **show someone** for a few hours? → Ngrok
 3. Need it **stable for days**? → Cloudflared
 
-🔗 [How to install cloudflared, ngrok?](https://scarfaceframework.netlify.app/) - Complete installation guide
-
+<a href="https://scarfaceframework.netlify.app/" style="color: #2e86c1; text-decoration: none; font-weight: bold;">How to install cloudflared, ngrok? →</a>
 ## Installation
 
 ```bash

@@ -78,4 +78,28 @@ All injections are designed to be:
 - Ethical (includes usage warnings)
 - Transparent (clearly visible in testing scenarios)
 
-  
+## Usage
+
+Scarface is designed for authorized security testing and educational purposes. To use the framework:
+
+1. Clone the target website using the built-in cloner
+2. Deploy the cloned site using your preferred tunneling method
+3. Monitor captured credentials through the dashboard
+4. Always ensure proper authorization before testing
+
+**Remember**: This tool should only be used on systems you own or have explicit permission to test.
+
+## Contribution
+
+We welcome contributions from security professionals:
+
+- Report bugs or suggest features via Issues
+- Submit pull requests for improvements
+- Help improve documentation
+
+## Structure
+![Structure](https://raw.githubusercontent.com/zerosocialcode/Scarface/refs/heads/main/images/structure.png)
+
+## License
+Scarface is released under the **MIT License**.
+- Share ethical use cases

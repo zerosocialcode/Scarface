@@ -107,6 +107,6 @@ We welcome contributions from security professionals:
 ## Connect
 <p align="left">
   <a href="https://t.me/zerosocialcode" target="_blank">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="Telegram" height="90"/>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="Telegram" height="45"/>
   </a>
 </p>

@@ -41,9 +41,9 @@ def print_banner():
     if banner.strip():
         print(banner)
     if config.get("tool_name"):
-        print(colored(f"\n{config['tool_name']}", 'red', attrs=['underline']))
+        print(colored(f"\n{config['tool_name']}", 'white', attrs=['bold']))
     if config.get("developer"):
-        print(colored(f"developer: {config['developer']}\n", 'red', attrs=['underline']))
+        print(colored(f"developer: {config['developer']}\n", 'white', attrs=['bold']))
     print("-" * os.get_terminal_size().columns)
 
 def refresh_screen(tools=None, current_selection=None):
@@ -68,13 +68,13 @@ def scan_tools(base_path):
 
 def list_tools(tools):
     for idx, name in enumerate(tools.keys(), 1):
-        print(colored(f"{idx}. {name}", 'cyan'))
+        print(colored(f"{idx}. {name}", 'white'))
 
 def select_tool(tools, main_prompt):
     while True:
         try:
             refresh_screen(tools)
-            choice = input(colored(f"\n{main_prompt}", 'yellow'))
+            choice = input(colored(f"\n{main_prompt}", 'green'))
             if not choice:
                 continue
             choice = int(choice)

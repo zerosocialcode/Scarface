@@ -6,7 +6,7 @@
 
 ## Preview
 
-![Scarface Preview](https://raw.githubusercontent.com/zerosocialcode/Scarface/refs/heads/main/images/.temp.png)
+![Scarface Preview](https://raw.githubusercontent.com/zerosocialcode/Scarface/refs/heads/main/images/temp.png)
 
 ---
 
@@ -29,7 +29,7 @@
 ---
 
 ## Directory Structure
-![Structure](https://raw.githubusercontent.com/zerosocialcode/Scarface/refs/heads/main/images/.structure.png)
+![Structure](https://raw.githubusercontent.com/zerosocialcode/Scarface/refs/heads/main/images/structure.png)
 
 
 ---

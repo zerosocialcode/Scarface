@@ -16,7 +16,7 @@ def load_banner():
     try:
         with open('.banner.txt', 'r') as f:
             banner = f.read()
-        return colored(banner, 'red', attrs=['bold'])
+        return colored(banner, 'green', attrs=['bold'])
     except FileNotFoundError:
         # No banner if file not found
         return ""
@@ -41,9 +41,9 @@ def print_banner():
     if banner.strip():
         print(banner)
     if config.get("tool_name"):
-        print(colored(f"\n{config['tool_name']}", 'red', attrs=['bold']))
+        print(colored(f"\n{config['tool_name']}", 'red', attrs=['underline']))
     if config.get("developer"):
-        print(colored(f"developer: {config['developer']}\n", 'red', attrs=['bold']))
+        print(colored(f"developer: {config['developer']}\n", 'red', attrs=['underline']))
     print("-" * os.get_terminal_size().columns)
 
 def refresh_screen(tools=None, current_selection=None):

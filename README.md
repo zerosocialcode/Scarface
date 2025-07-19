@@ -63,13 +63,19 @@ Scarface is a sophisticated phishing framework designed for penetration testing 
 
 <a href="https://scarfaceframework.netlify.app/" style="color: #2e86c1; text-decoration: none; font-weight: bold;">How to install cloudflared, ngrok? →</a>
 
-[<img src="https://img.icons8.com/fluency/24/000000/link.png" width="15"/> How to install cloudflared, ngrok?](https://scarfaceframework.netlify.app/)
+## Injection System
 
-[<kbd>How to install cloudflared, ngrok?</kbd>](https://scarfaceframework.netlify.app/)
+The framework includes an automated injection mechanism that:
 
-## Installation
+- Adds credential capture functionality to cloned sites
+- Works with both static HTML and PHP sites
+- Preserves original site functionality
+- Stores captured data securely
+- Leaves minimal forensic traces
 
-```bash
-https://github.com/zerosocialcode/Scarface.git
-cd Scarface
-pip install -r requirements.txt
+All injections are designed to be:
+- Reversible (original files are backed up)
+- Ethical (includes usage warnings)
+- Transparent (clearly visible in testing scenarios)
+
+  

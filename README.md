@@ -61,6 +61,8 @@ Scarface is a sophisticated phishing framework designed for penetration testing 
 2. Need to **show someone** for a few hours? → Ngrok
 3. Need it **stable for days**? → Cloudflared
 
+## Tutorial for installing Cloudflared,Ngrok
+![tutorial](https://scarface.com)
 
 ## Installation
 

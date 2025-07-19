@@ -105,11 +105,8 @@ We welcome contributions from security professionals:
 ![Structure](https://raw.githubusercontent.com/zerosocialcode/Scarface/refs/heads/main/images/structure.png)
 
 ## Connect
-<p align="center">
+<p align="left">
   <a href="https://t.me/zerosocialcode" target="_blank">
     <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="Telegram" height="90"/>
   </a>
 </p>
-
-## License
-Scarface is released under the **MIT License**.

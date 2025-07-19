@@ -14,7 +14,7 @@ def clear_screen():
 def load_banner():
     """Loads banner from .banner.txt file only"""
     try:
-        with open('.banner.txt', 'r') as f:
+        with open('banner/banner.txt', 'r') as f:
             banner = f.read()
         return colored(banner, 'green', attrs=['bold'])
     except FileNotFoundError:
@@ -24,7 +24,7 @@ def load_banner():
 def load_config():
     """Loads configuration from .dev.json"""
     try:
-        with open('.dev.json', 'r') as f:
+        with open('developer/dev.json', 'r') as f:
             config = json.load(f)
         return config
     except (FileNotFoundError, json.JSONDecodeError):

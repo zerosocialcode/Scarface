@@ -1,3 +1,6 @@
+![Scarface Preview](https://raw.githubusercontent.com/zerosocialcode/Scarface/refs/heads/main/images/logo.png)
+
+
 # Social Engineering & Credential Harvesting Automated Framework for Cyber Exercises
 
 
@@ -6,8 +9,6 @@
 
 ## Overview
 Scarface is a sophisticated phishing framework designed for penetration testing and security research. It provides a complete suite of tools to clone target websites, inject credential harvesting capabilities, deploy phishing servers, and capture credentials through various tunneling methods - all in a single integrated toolkit.
-## Preview
-![Scarface Preview](https://raw.githubusercontent.com/zerosocialcode/Scarface/refs/heads/main/images/temp.png)
 
 ## Features
 

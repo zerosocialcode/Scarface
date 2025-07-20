@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/zerosocialcode/Scarface/refs/heads/main/images/logo.png" alt="Scarface Logo" width="200">
+  <img src="https://raw.githubusercontent.com/zerosocialcode/Scarface/refs/heads/main/images/logo.png" alt="Scarface Logo" width="300">
 
   # Social Engineering & Credential Harvesting Automated Framework for Cyber Exercises
 
@@ -15,30 +15,30 @@ Scarface is a sophisticated phishing framework designed for penetration testing 
 ## ✨ Features
 
 ### Complete Phishing Lifecycle Management
-- ✅ Website cloning with resource downloading  
-- ✅ Automatic credential harvesting injection  
-- ✅ Server deployment (PHP and Flask)  
-- ✅ Real-time credential monitoring  
-- ✅ Multiple tunneling options  
+- 📡 Website cloning with resource downloading  
+- 📡 Automatic credential harvesting injection  
+- 📡 Server deployment (PHP and Flask)  
+- 📡 Real-time credential monitoring  
+- 📡 Multiple tunneling options  
 
 ### Smart Injection System
-- ✅ JavaScript injection for HTML sites  
-- ✅ PHP code injection for PHP-based sites  
-- ✅ Automatic backup of original files  
-- ✅ Injection markers to prevent duplicates  
+- 📡 JavaScript injection for HTML sites  
+- 📡 PHP code injection for PHP-based sites  
+- 📡 Automatic backup of original files  
+- 📡 Injection markers to prevent duplicates  
 
 ### Flexible Deployment
-- ✅ Localhost testing  
-- ✅ Cloudflared tunneling  
-- ✅ Ngrok integration  
-- ✅ LocalTunnel support  
-- ✅ Mobile-responsive viewport injection  
+- 📡 Localhost testing  
+- 📡 Cloudflared tunneling  
+- 📡 Ngrok integration  
+- 📡 LocalTunnel support  
+- 📡 Mobile-responsive viewport injection  
 
 ### Credential Management
-- ✅ Real-time monitoring  
-- ✅ Desktop notifications  
-- ✅ JSON storage format  
-- ✅ Latest credential display  
+- 📡 Real-time monitoring  
+- 📡 Desktop notifications  
+- 📡 JSON storage format  
+- 📡 Latest credential display  
 
 ## 🌐 Tunneling Options Comparison
 
@@ -58,11 +58,11 @@ Scarface is a sophisticated phishing framework designed for penetration testing 
 
 ## 💉 Injection System
 The framework includes an automated injection mechanism that:
-- Adds credential capture functionality to cloned sites  
-- Works with both static HTML and PHP sites  
-- Preserves original site functionality  
-- Stores captured data securely  
-- Leaves minimal forensic traces  
+- 📡 Adds credential capture functionality to cloned sites  
+- 📡 Works with both static HTML and PHP sites  
+- 📡 Preserves original site functionality  
+- 📡 Stores captured data securely  
+- 📡 Leaves minimal forensic traces  
 
 All injections are designed to be:
 - 🔄 Reversible (original files are backed up)  
@@ -84,9 +84,3 @@ We welcome contributions from security professionals:
 - 🐛 Report bugs or suggest features via Issues  
 - 💡 Submit pull requests for improvements  
 - 📖 Help improve documentation  
-
-## 📐 Structure
-![Structure](https://raw.githubusercontent.com/zerosocialcode/Scarface/refs/heads/main/images/structure.png)
-
-## 📡 Connect
-[<img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="Telegram" width="40">](https://t.me/zerosocialcode)

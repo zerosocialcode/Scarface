@@ -16,7 +16,7 @@ def load_banner():
     try:
         with open('banner/banner.txt', 'r') as f:
             banner = f.read()
-        return colored(banner, 'green', attrs=['bold'])
+        return colored(banner, 'white', attrs=['bold'])
     except FileNotFoundError:
         # No banner if file not found
         return ""
@@ -41,9 +41,9 @@ def print_banner():
     if banner.strip():
         print(banner)
     if config.get("tool_name"):
-        print(colored(f"\n{config['tool_name']}", 'white', attrs=['bold']))
+        print(colored(f"\n{config['tool_name']}", 'blue', attrs=['bold']))
     if config.get("developer"):
-        print(colored(f"developer: {config['developer']}\n", 'white', attrs=['bold']))
+        print(colored(f"developer: {config['developer']}\n", 'blue', attrs=['bold']))
     print("-" * os.get_terminal_size().columns)
 
 def refresh_screen(tools=None, current_selection=None):
@@ -74,7 +74,7 @@ def select_tool(tools, main_prompt):
     while True:
         try:
             refresh_screen(tools)
-            choice = input(colored(f"\n{main_prompt}", 'green'))
+            choice = input(colored(f"\n{main_prompt}", 'blue'))
             if not choice:
                 continue
             choice = int(choice)

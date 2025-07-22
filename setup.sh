@@ -37,7 +37,7 @@ error() { echo -e "${RED}[-]${NC} $1"; }
 
 # Create launcher script
 create_launcher() {
-    local launcher_path="$PWD/phish-launcher"
+    local launcher_path="$PWD/.launcher"
     
     if [ -f "$launcher_path" ]; then
         info "Updating existing launcher script..."
@@ -56,12 +56,6 @@ cd "$PWD"
 # Set clear command based on OS
 CLEAR='cls' && [[ \$OSTYPE == linux* || \$OSTYPE == darwin* ]] && CLEAR='clear'
 
-# Display banner if available
-if [ -f "banner/banner.txt" ]; then
-    echo -e "\033[1;32m"
-    cat "banner/banner.txt"
-    echo -e "\033[0m"
-fi
 
 # Execute main script
 python3 main.py "\$@"
@@ -69,7 +63,7 @@ EOL
 
     # Make launcher executable
     chmod +x "$launcher_path"
-    success "Launcher script created: ${GREEN}phish-launcher${NC}"
+    success "Launcher script created: ${GREEN}.launcher${NC}"
 }
 
 # Install dependencies based on OS
@@ -148,7 +142,7 @@ create_symlink() {
             ;;
     esac
 
-    local launcher_path="$PWD/phish-launcher"
+    local launcher_path="$PWD/.launcher"
     
     # Create launcher if it doesn't exist
     if [ ! -f "$launcher_path" ]; then

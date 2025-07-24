@@ -74,9 +74,6 @@ Whether you're running red-team engagements, training simulations, or lab testin
 * 🕒 **Immediate testing?** → Use **LocalTunnel**
 * 👥 **Demo for a few hours?** → Use **Ngrok**
 * 🧱 **Need stability over time?** → Use **Cloudflared**
-
-👉 [**Setup guides available here**](https://scarfaceframework.netlify.app/)
-
 ---
 
 ## 💉 Injection Engine Explained
@@ -141,5 +138,5 @@ Any misuse is the sole responsibility of the user. Always follow legal and ethic
 ---
 
 <div align="center">
-  Made with ❤️ by <a href="https://github.com/zerosocialcode">zerosocialcode</a>
+  Author: <a href="https://github.com/zerosocialcode">zerosocialcode</a>
 </div>

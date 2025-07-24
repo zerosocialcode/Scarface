@@ -13,7 +13,7 @@ class Cloner:
             os.path.join(
                 os.path.dirname(__file__), 
                 '..', 
-                'sites'
+                '.sites'
             )
         )
         self.visited_urls = set()

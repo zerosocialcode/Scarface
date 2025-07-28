@@ -2,15 +2,13 @@
   <img src="https://raw.githubusercontent.com/zerosocialcode/Scarface/refs/heads/main/images/logo.png" alt="Scarface Logo" width="600"/>
 
   <h1>Scarface Framework</h1>
----
-## 🛡️ Legal & Ethical Notice
+  🛡️ Legal & Ethical Notice
 
 This framework is a **penetration testing tool** designed for **educational** use and **authorized environments only**.
 Any misuse is the sole responsibility of the user. Always follow legal and ethical guidelines.
 
----
 
-*Maintained by [@zerosocialcode](https://github.com/zerosocialcode)*
+*Maintained by [zerosocialcode](https://github.com/zerosocialcode)*
 
 </div>
 

@@ -2,9 +2,13 @@
   <img src="https://raw.githubusercontent.com/zerosocialcode/Scarface/refs/heads/main/images/logo.png" alt="Scarface Logo" width="600"/>
 
   <h1>Scarface Framework</h1>
-  <h3>🎯 Automated Social Engineering & Credential Harvesting Toolkit for Cybersecurity Exercises</h3>
+---
+## 🛡️ Legal & Ethical Notice
 
-> ⚠️ **Disclaimer:** This tool is intended strictly for **authorized penetration testing and educational purposes**. Unauthorized use is illegal and strictly prohibited.
+This framework is a **penetration testing tool** designed for **educational** use and **authorized environments only**.
+Any misuse is the sole responsibility of the user. Always follow legal and ethical guidelines.
+
+---
 
 *Maintained by [@zerosocialcode](https://github.com/zerosocialcode)*
 
@@ -24,119 +28,76 @@
 
 Whether you're running red-team engagements, training simulations, or lab testing, Scarface automates the full phishing lifecycle.
 
----
+## Requirements
 
-## ✨ Key Features
+Ensure the following packages and tools are installed:
 
-### 🔁 Phishing Lifecycle Automation
-
-* 🌐 One-click website cloning
-* 💉 Credential harvester auto-injection
-* 🔧 Flask & PHP phishing server setup
-* 👁️ Real-time credential monitoring
-* 🌍 Multiple tunneling integrations
-
-### 💉 Smart Injection System
-
-* 🧠 JavaScript injection for HTML targets
-* 💘 PHP injection for dynamic sites
-* 📀 Automatic backup of original site files
-* 🔐 Duplicate-safe injection markers
-
-### 🚀 Deployment Options
-
-* 🧪 Localhost testing
-* ☁️ Cloudflared
-* 🕳️ Ngrok
-* 🔓 LocalTunnel
-* 📱 Mobile-responsive injection layouts
-
-### 📋 Credential Management
-
-* 🔍 Live capture display
-* 🔔 Desktop notifications
-* 📁 JSON format storage
-* ⏱️ Latest credentials always visible
+- `Cloudflared`
+- `Ngrok`
+- `beautifulsoup4`
+- `Flask`
+- `requests`
+- `termcolor`
 
 ---
 
-## 🌐 Tunneling Services: Quick Comparison
+## Installation
 
-| Feature            | **Ngrok**   | **Cloudflared**    | **LocalTunnel** |
-| ------------------ | ----------- | ------------------ | --------------- |
-| **Best for**       | Short demos | Long-term sessions | Instant use     |
-| **Setup**          | Easy        | Moderate           | Easiest         |
-| **Stability**      | \~2hr limit | Very stable        | Less stable     |
-| **Account Needed** | ✅ Yes       | ✅ Yes              | ❌ No            |
+### Cloudflared
 
-### 🔍 Recommendation:
+### Other:
+```bash
+wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64 -O cloudflared
+chmod +x cloudflared
+sudo mv cloudflared /usr/local/bin/
+```
 
-* 🕒 **Immediate testing?** → Use **LocalTunnel**
-* 👥 **Demo for a few hours?** → Use **Ngrok**
-* 🧱 **Need stability over time?** → Use **Cloudflared**
----
+Verify installation:
+```bash
+cloudflared --version
+```
 
-## 💉 Injection Engine Explained
+#### Termux:
+```bash
+pkg install cloudflared
+```
 
-Scarface’s injection module automatically integrates credential capture into cloned pages without breaking original functionality.
-
-* 🖠️ Supports both **HTML** and **PHP** targets
-* 🔐 Injects stealthy credential harvesters
-* 🔁 Backs up all original files
-* 🧼 Minimal forensic trace footprint
-* 🧪 Ideal for controlled environments and testing scenarios
-
-All injections are:
-
-* ✅ Reversible
-* ⚠️ Transparent for training
-* ✔️ Safe within authorized boundaries
+Verify installation:
+```bash
+cloudflared --version
+```
 
 ---
 
-## 🛠️ Getting Started
+## Setup
 
-Clone the repository and install:
-
+Make the setup script executable:
 ```bash
 chmod +x setup.sh
+```
+
+Then run:
+```bash
 ./setup.sh
 ```
 
-Run the tool:
+---
 
+## Run
+
+Start the toolkit using:
 ```bash
 phish
 ```
 
-### Step-by-step Workflow:
-
-1. 🧲 Clone a target website
-2. 💉 Inject the harvesting code
-3. 🚀 Deploy using your chosen tunnel
-4. 🔍 Monitor credentials live
-
-> ⚠️ **Important:** Always have **explicit permission** before conducting any tests.
-
 ---
 
-## 🤝 Contributing
+## Usage
 
-Contributions are welcomed from cybersecurity professionals and enthusiasts:
+The toolkit offers the following modules:
 
-* 🐞 Report bugs or request features via [Issues](https://github.com/zerosocialcode/Scarface/issues)
-* ⚙️ Submit pull requests for improvements
-* 📘 Help enhance the documentation
+1. **Cloner Module**  
+   Clone any web page for phishing simulation.
 
----
-
-## 🛡️ Legal & Ethical Notice
-
-This framework is a **penetration testing tool** designed for **educational** use and **authorized environments only**.
-Any misuse is the sole responsibility of the user. Always follow legal and ethical guidelines.
-
----
-
-<div align="center">
-  Author: <a href="https://github.com/zerosocialcode">zerosocialcode</a>
-</div>
+2. **Harvest Module**  
+   Harvest credentials entered by targets on cloned sites.

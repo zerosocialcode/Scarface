@@ -27,7 +27,6 @@ def main():
         cloner = Cloner()
         if cloner.clone_site(url, folder_name, depth):
             final_path = os.path.join(cloner.base_dir, folder_name)
-            print_success(f"\n[+] Clone successful! Saved to: {final_path}")
         else:
             print_error("\n[!] Cloning failed")
             

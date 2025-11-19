@@ -1,101 +1,121 @@
 <div align="center">
   <img src="https://raw.githubusercontent.com/zerosocialcode/Scarface/refs/heads/main/images/logo.png" alt="Scarface Logo" width="600"/>
-
   <h1>Scarface Framework</h1>
   🛡️ Legal & Ethical Notice
 
-This framework is a **penetration testing tool** designed for **educational** use and **authorized environments only**.
-Any misuse is the sole responsibility of the user. Always follow legal and ethical guidelines.
+This framework is a penetration testing toolkit for educational and authorized use only. Obtain explicit permission before running any phishing or credential-harvesting activities.
 
-
-*Maintained by [zerosocialcode](https://github.com/zerosocialcode)*
-
+*Maintained by [zerosocialcode](t.me/dev_zerosocialcode)*
 </div>
 
 ---
 
-## 🚀 What is Scarface?
+## Overview
 
-**Scarface** is an all-in-one phishing and credential harvesting framework built for ethical hacking and cybersecurity simulations. It enables professionals to:
+Scarface helps with phishing simulation and training by providing tools to:
+- Clone webpages
+- Capture submitted data
+- Expose local services (Cloudflared / Ngrok)
+- Build HTML email templates
+- Send emails via SMTP
 
-* Clone real-world websites
-* Inject harvesting scripts
-* Host phishing servers
-* Capture credentials
-* Use tunneling services to expose local services
-
-Whether you're running red-team engagements, training simulations, or lab testing, Scarface automates the full phishing lifecycle.
+Use only in controlled, authorized environments.
 
 ## Requirements
 
-Ensure the following packages and tools are installed:
-
-- `Cloudflared`
-- `Ngrok`
-- `beautifulsoup4`
-- `Flask`
-- `requests`
-- `termcolor`
+- Cloudflared (or Ngrok)
+- Python 3 and packages: beautifulsoup4, Flask, requests, termcolor
+- Optional: pandas (for CSV-based recipient lists)
 
 ---
 
-## Installation
+## Install (example)
 
-### Cloudflared
-
-### Other:
 ```bash
 wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64 -O cloudflared
 chmod +x cloudflared
 sudo mv cloudflared /usr/local/bin/
-```
-
-Verify installation:
-```bash
 cloudflared --version
 ```
 
-#### Termux:
+Termux:
 ```bash
 pkg install cloudflared
-```
-
-Verify installation:
-```bash
 cloudflared --version
 ```
 
 ---
 
-## Setup
+## Setup & Run
 
-Make the setup script executable:
+Make the setup script executable and run it:
 ```bash
 chmod +x setup.sh
-```
-
-Then run:
-```bash
 ./setup.sh
 ```
 
----
-
-## Run
-
-Start the toolkit using:
+Start the toolkit:
 ```bash
 phish
 ```
 
 ---
 
-## Usage
+## Modules
 
-The toolkit offers the following modules:
+- Cloner — Create a replica of a web page for testing.
+- Harvest — Host the cloned page and collect inputs. Use Cloudflared/Ngrok to get a public URL.
+- Mailroom — Generate realistic HTML email templates (examples: Facebook, Instagram). Insert the Harvest public URL and export ready-to-send HTML files.
+- MailBird — Send HTML emails via SMTP. Supports sending to one recipient or to many using a CSV list.
 
-1. **Cloner Module**  
-   Clone any web page for phishing simulation.
+Workflow:
+1. Clone a page and run Harvest.
+2. Expose Harvest and copy the public URL.
+3. Create an email in Mailroom embedding that URL.
+4. Deliver the email with MailBird.
 
-2. **Harvest Module**  
-   Harvest credentials entered by targets on cloned sites.
+---
+
+## MailBird — Gmail setup
+
+1. Turn on 2-Step Verification for your Google account.
+2. Create an App Password: Google Account → Security → App passwords.
+3. Update MailBird main.py (EmailSender class):
+
+```python
+self.SENDER_EMAIL = 'your-email@gmail.com'           # your Gmail address
+self.SENDER_PASSWORD = 'your-generated-app-password' # App Password
+```
+
+Notes:
+- Use App Passwords when 2FA is enabled.
+- Observe Gmail SMTP limits; use a transactional provider for high-volume testing.
+
+---
+
+## Example flow
+
+1. Clone a target page.
+2. Run Harvest and expose it.
+3. Make an email in Mailroom with the exposed URL.
+4. Send with MailBird to chosen recipients.
+
+---
+
+## Responsible use
+
+Always have written authorization before testing. Use test accounts and isolated labs. The project owner is not responsible for misuse.
+
+---
+
+## Contributing
+
+Templates, delivery improvements, and integrations are welcome. Open an issue or PR and include test files or logs.
+
+---
+
+## Support
+
+If you need a tutorial or demo for Mailroom, MailBird, or the full workflow, contact: zerosocialcode@gmail.com or reach out on Telegram.
+
+---

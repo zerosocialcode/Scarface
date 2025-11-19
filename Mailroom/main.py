@@ -1,10 +1,12 @@
 import os
 import sys
 import time
-from flask import Flask, render_template, request, redirect, url_for, session, render_template_string
-
-# Suppress all Flask/Werkzeug logging
+import json
 import logging
+from datetime import datetime
+from flask import Flask, render_template, request, redirect, url_for, session, render_template_string, jsonify
+import flask.cli
+
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 logging.getLogger('flask').setLevel(logging.ERROR)
@@ -12,17 +14,27 @@ logging.getLogger('flask').setLevel(logging.ERROR)
 app = Flask(__name__)
 app.secret_key = "change-this-secret-key"
 
-# Hide Flask banner
-import flask.cli
 flask.cli.show_server_banner = lambda *args: None
 
 EMAIL_TEMPLATES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../email_templates'))
+SAVE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../MailBird/mails'))
+
+class Colors:
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    END = '\033[0m'
 
 def get_available_templates():
-    return sorted([
-        f[:-5] for f in os.listdir(EMAIL_TEMPLATES_DIR)
-        if f.endswith(".html") and not f.startswith("_")
-    ])
+    try:
+        return sorted([
+            f[:-5] for f in os.listdir(EMAIL_TEMPLATES_DIR)
+            if f.endswith(".html") and not f.startswith("_")
+        ])
+    except FileNotFoundError:
+        return []
 
 def render_email(template_name, **data):
     template_file = os.path.join(EMAIL_TEMPLATES_DIR, f"{template_name}.html")
@@ -60,78 +72,101 @@ def result():
         return redirect(url_for('index'))
     return render_template("result.html", generated_html=generated_html, template_name=template_name)
 
-class Colors:
-    """Simple color codes"""
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    BOLD = '\033[1m'
-    END = '\033[0m'
+@app.route('/save_template', methods=['POST'])
+def save_template():
+    generated_html = session.get('generated_html')
+    
+    if not generated_html:
+        return jsonify({"status": "error", "message": "No generated HTML found in session."}), 400
+
+    if not os.path.exists(SAVE_DIR):
+        try:
+            os.makedirs(SAVE_DIR)
+        except OSError as e:
+            return jsonify({"status": "error", "message": f"Could not create directory: {e}"}), 500
+
+    max_number = 0
+    try:
+        for f in os.listdir(SAVE_DIR):
+            if f.startswith("email_") and f.endswith(".html"):
+                try:
+                    number_part = f[6:-5]
+                    if number_part.isdigit():
+                        num = int(number_part)
+                        if num > max_number:
+                            max_number = num
+                except ValueError:
+                    continue
+    except OSError:
+        pass
+
+    next_number = max_number + 1
+    filename = f"email_{next_number}.html"
+    filepath = os.path.join(SAVE_DIR, filename)
+
+    try:
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(generated_html)
+        
+        print(f"{Colors.GREEN}[Server] Saved backup to: {filepath}{Colors.END}")
+        
+        return jsonify({
+            "status": "success", 
+            "message": f"File saved as {filename}", 
+            "path": filepath
+        })
+    except Exception as e:
+        print(f"{Colors.RED}[Server] Error saving file: {e}{Colors.END}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 def get_terminal_width():
-    """Get terminal width with fallback"""
     try:
         return os.get_terminal_size().columns
     except (OSError, AttributeError):
         return 80
 
 def clear_screen():
-    """Clear terminal screen"""
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def load_banner():
-    """Load banner from file"""
     banner_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../banner/mailroom.txt'))
     try:
         with open(banner_path, 'r', encoding='utf-8') as f:
-            banner_content = f.read()
-        return banner_content
-    except FileNotFoundError:
-        return f"{Colors.BLUE}Email Template Generator{Colors.END}"
-    except Exception as e:
+            return f.read()
+    except Exception:
         return f"{Colors.BLUE}Email Template Generator{Colors.END}"
 
 def print_banner():
-    """Print the banner in blue color"""
     banner_text = load_banner()
-    width = min(get_terminal_width(), 80)
-    
-    # Print banner in blue
     for line in banner_text.split('\n'):
-        if line.strip():  # Only print non-empty lines
+        if line.strip():
             print(f"{Colors.BLUE}{line}{Colors.END}")
     print()
 
 def print_server_info():
-    """Print server information"""
     width = min(get_terminal_width(), 80) - 20
     separator = '─' * width
     
     print(f"{Colors.BOLD}Server Status{Colors.END}")
     print(f"{separator}")
-    
     print(f"Local URL:     {Colors.BOLD}{Colors.GREEN}http://127.0.0.1:5000{Colors.END}")
-    print(f"Network URL:   {Colors.BOLD}{Colors.GREEN}http://localhost:5000{Colors.END}")
+    print(f"Save Path:     {Colors.BOLD}{Colors.YELLOW}{SAVE_DIR}{Colors.END}")
     print()
 
 def print_template_info():
-    """Print template information"""
     width = min(get_terminal_width(), 80) - 20
     separator = '─' * width
     templates = get_available_templates()
     
     print(f"{Colors.BOLD}Template Library{Colors.END}")
     print(f"{separator}")
-    
     print(f"Available Templates: {Colors.BOLD}{Colors.GREEN}{len(templates)}{Colors.END}")
     
     if templates:
-        # Show first 3 templates, truncate if too long
         template_preview = ', '.join(templates[:3])
         if len(templates) > 3:
             template_preview += f"... (+{len(templates)-3} more)"
-            
+        
         max_template_width = width - 25
         if len(template_preview) > max_template_width:
             template_preview = template_preview[:max_template_width-3] + "..."
@@ -140,33 +175,22 @@ def print_template_info():
     print()
 
 def print_instructions():
-    """Print user instructions"""
-    width = min(get_terminal_width(), 80) - 20
-    separator = '─' * width
-    
     print(f"{Colors.BOLD}Quick Start{Colors.END}")
-    print(f"{separator}")
+    print(f"{'─' * (min(get_terminal_width(), 80) - 20)}")
     
     instructions = [
         f"{Colors.GREEN}•{Colors.END} Open your browser and go to the URL above",
         f"{Colors.GREEN}•{Colors.END} Create email templates using the web interface",
-        f"{Colors.GREEN}•{Colors.END} Preview and customize templates in real-time",
-        f"{Colors.GREEN}•{Colors.END} Copy the generated HTML for your emails",
+        f"{Colors.GREEN}•{Colors.END} Click 'Download HTML' to save locally AND to server",
     ]
     
     for instruction in instructions:
-        max_width = width + 20
-        if len(instruction) > max_width:
-            instruction = instruction[:max_width-3] + "..."
         print(instruction)
     print()
 
 def print_footer():
-    """Print footer with commands"""
     width = min(get_terminal_width(), 80) - 20
-    separator = '─' * width
-    
-    print(f"{separator}")
+    print(f"{'─' * width}")
     
     commands = [
         f"{Colors.YELLOW}Ctrl+C{Colors.END} to stop server",
@@ -174,12 +198,10 @@ def print_footer():
     ]
     
     print(f"Commands: {' │ '.join(commands)}")
-    
     print(f"\n{'=' * min(width + 20, 80)}")
     print(f"Server is running...\n")
 
 def show_loading(duration=2):
-    """Show a loading animation"""
     frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
     end_time = time.time() + duration
     
@@ -195,7 +217,6 @@ def show_loading(duration=2):
     print(f"\b{Colors.GREEN}✓{Colors.END}")
 
 def show_interface():
-    """Display the interface"""
     clear_screen()
     print_banner()
     show_loading()
@@ -208,19 +229,14 @@ def show_interface():
 if __name__ == '__main__':
     try:
         show_interface()
-        # Remove the problematic environment variable
         if 'WERKZEUG_SERVER_FD' in os.environ:
             del os.environ['WERKZEUG_SERVER_FD']
         
-        # Run the server
         app.run(host='127.0.0.1', port=5000, debug=False, use_reloader=False)
         
     except KeyboardInterrupt:
-        width = min(get_terminal_width(), 80)
         print(f"\n\n{Colors.BLUE}Server stopped{Colors.END}")
-        print(f"Thanks for using Email Template Generator!\n")
         sys.exit(0)
     except Exception as e:
         print(f"\n{Colors.RED}Error starting server: {e}{Colors.END}")
-        print(f"Try using a different port or check if port 5000 is available.")
         sys.exit(1)

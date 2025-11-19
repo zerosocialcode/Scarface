@@ -34,7 +34,6 @@
     
     <div class="section-label">Live Preview:</div>
     <div class="live-preview">
-      <!-- Render the HTML template as preview -->
       {{ generated_html | safe }}
     </div>
     
@@ -56,15 +55,40 @@
       document.execCommand('copy');
       alert('HTML copied to clipboard!');
     }
+
     function downloadHtml() {
       const text = document.getElementById('generatedHtml').value;
       const blob = new Blob([text], { type: 'text/html' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = 'email_template.html';
+      
+      const date = new Date();
+      const timestamp = date.toISOString().slice(0,10).replace(/-/g,"") + "_" + 
+                        date.toTimeString().slice(0,8).replace(/:/g,"");
+      link.download = `email_template_${timestamp}.html`;
+      
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+
+      fetch('/save_template', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          console.log('Server backup successful: ' + data.path);
+        } else {
+          console.error('Server save failed: ' + data.message);
+          alert('Downloaded locally, but server backup failed: ' + data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
     }
   </script>
 </body>

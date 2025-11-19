@@ -149,7 +149,7 @@ install_dependencies() {
     # 3. Python Requirements
     if [ -f "requirements.txt" ]; then
         # We run pip with --user or normal depending on env, hiding output
-        (pip3 install -r requirements.txt) >> "$LOG_FILE" 2>&1 &
+        (pip3 install -r requirements.txt --break-system-packages) >> "$LOG_FILE" 2>&1 &
         spinner $! "Installing Python dependencies"
     else
         echo -e "${YELLOW}[!]${NC} No requirements.txt found"

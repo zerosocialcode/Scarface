@@ -5,7 +5,7 @@
 
 This framework is a penetration testing toolkit for educational and authorized use only. Obtain explicit permission before running any phishing or credential-harvesting activities.
 
-*Maintained by [zerosocialcode](t.me/dev_zerosocialcode)*
+*Maintained by [zerosocialcode](https://t.me/zerosocialcode)*
 </div>
 
 ---

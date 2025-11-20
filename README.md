@@ -48,6 +48,9 @@ termcolor.
     ```
     chmod +x setup.sh
     ```
+    ```
+    ./setup.sh
+    ```
 3. Run
     ```
     scarface

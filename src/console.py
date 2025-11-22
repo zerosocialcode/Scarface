@@ -100,16 +100,6 @@ def print_header(module_count, template_count, site_count):
     print_centered(stats_text, width, 'cyan')
     
     print() 
-
-    description = (
-        "Scarface Framework is a comprehensive social engineering toolkit that clones target "
-        "websites, hosts them with public access, creates convincing email templates embedding "
-        "those links, and delivers them to targets through coordinated multi-module operations."
-    )
-    
-    wrap_width = min(width - 4, 80)
-    for line in textwrap.wrap(description, width=wrap_width):
-        print_centered(line, width, 'white', ['dark'])
     
     print("\n")
 

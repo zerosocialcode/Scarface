@@ -31,12 +31,12 @@ An integrated SMTP client manages the distribution of assessment emails. It supp
 The framework features a robust logging system that records interactions with the hosted simulations. It captures form submissions and access logs, providing detailed reports on user interactions. This data is crucial for generating post-assessment reports and identifying areas where security training is needed.
 
 ## Requirements
-
-beautifulsoup4.
-Flask.
-requests.
-termcolor.
-
+```
+beautifulsoup4
+Flask
+requests
+termcolor
+```
 ## Quick start
 
 1. Clone the repository

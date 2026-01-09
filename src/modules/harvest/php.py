@@ -10,15 +10,12 @@ import shutil
 
 def launch_php_server(site_root, main_file, port=None):
     """PHP server with guaranteed cleanup"""
-    # Find PHP executable in PATH
     php_exec = shutil.which('php')
     if not php_exec:
         raise RuntimeError("PHP not found in PATH")
 
-    # Use relative paths to avoid temp files
     rel_main = os.path.relpath(main_file, site_root)
     
-    # Start PHP server
     proc = subprocess.Popen(
         [php_exec, "-S", f"0.0.0.0:{port or 0}", "-t", site_root],
         cwd=site_root,
@@ -27,7 +24,6 @@ def launch_php_server(site_root, main_file, port=None):
         stdin=subprocess.PIPE
     )
 
-    # Get actual port used
     actual_port = port
     if not port:
         for _ in range(10):
@@ -42,7 +38,6 @@ def launch_php_server(site_root, main_file, port=None):
             proc.terminate()
             raise RuntimeError("Could not determine server port")
 
-    # Cleanup function
     def cleanup():
         try:
             if proc.poll() is None:
@@ -56,7 +51,6 @@ def launch_php_server(site_root, main_file, port=None):
 
     atexit.register(cleanup)
     
-    # Ctrl+C handler
     def handle_sigint(signum, frame):
         cleanup()
         sys.exit(0)

